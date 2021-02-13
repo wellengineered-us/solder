@@ -1,0 +1,24 @@
+﻿<!--
+	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+	</PropertyGroup>
+
+	<Import Project="..\common.props" />
+
+	<ItemGroup>
+		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Utilities\WellEngineered.Solder.Utilities.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Context\WellEngineered.Solder.Context.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.9" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.9" />
+	</ItemGroup>
+
+</Project>

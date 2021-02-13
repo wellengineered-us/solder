@@ -1,0 +1,22 @@
+------------------------------------------------------------------------------------------------------
+| OPEN SOURCE IMPORTS
+| last updated: 2020-10-07
+------------------------------------------------------------------------------------------------------
+
+[CastleCore]
+<https://github.com/castleproject/Core>
+Core-4.4.1.zip <https://github.com/castleproject/Core/commit/e1c1e6f0ded0184f12466666b4ae93f32ebad4f4>
+
+
+[NMock3]
+<https://github.com/pwolfe/NMock3>
+nmock3-87315.zip <https://nmock3.codeplex.com/SourceControl/latest>
+
+// evaluated but not integrated as project is a WIP
+NMock3 [codeplex archive].zip <https://archive.codeplex.com/?p=nmock3>
+NMock3-master.zip <https://github.com/pwolfe/NMock3>
+
+
+[NUnit3]
+<https://github.com/nunit/nunit>
+nunit-3.12.zip <https://github.com/nunit/nunit/commit/c933a883ea25263ec575a654dae69fa38000edd9>

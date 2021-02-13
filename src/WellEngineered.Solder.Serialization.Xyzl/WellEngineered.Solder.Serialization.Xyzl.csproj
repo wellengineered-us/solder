@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+	</PropertyGroup>
+
+	<Import Project="..\common.props" />
+
+	<ItemGroup>
+		<ProjectReference Include="..\WellEngineered.Solder.Configuration\WellEngineered.Solder.Configuration.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Serialization\WellEngineered.Solder.Serialization.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Extensions\WellEngineered.Solder.Extensions.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Utilities\WellEngineered.Solder.Utilities.csproj" />
+	</ItemGroup>
+
+</Project>
