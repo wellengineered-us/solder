@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------------------------------
 | OPEN SOURCE IMPORTS
-| last updated: 2020-10-07
+| last updated: 2021-12-21
 ------------------------------------------------------------------------------------------------------
 
 [CastleCore]
@@ -16,7 +16,34 @@ nmock3-87315.zip <https://nmock3.codeplex.com/SourceControl/latest>
 NMock3 [codeplex archive].zip <https://archive.codeplex.com/?p=nmock3>
 NMock3-master.zip <https://github.com/pwolfe/NMock3>
 
+????
+NMock3-08d6c9e71c18a627205ddd1139293a3dfcf8e39c.zip <https://github.com/pwolfe/NMock3/tree/08d6c9e71c18a627205ddd1139293a3dfcf8e39c>
 
 [NUnit3]
 <https://github.com/nunit/nunit>
-nunit-3.12.zip <https://github.com/nunit/nunit/commit/c933a883ea25263ec575a654dae69fa38000edd9>
+nunit-3.13.2.zip <https://github.com/nunit/nunit/commit/5631b49d1cf3f50beba6c595ddfbdac05b73d37b>
+
+
+
+[AsyncEx]
+<https://github.com/StephenCleary/AsyncEx>
+AsyncEx-5.1.2.zip <https://github.com/StephenCleary/AsyncEx/commit/0361015459938f2eb8f3c1ad1021d19ee01c93a4>
+
+[Disposables] ([AsyncEx])
+https://github.com/StephenCleary/Disposables
+Disposables-2.2.1.zip <https://github.com/StephenCleary/Disposables/commit/421e8c3af9e9baf1c885671887671971aa2d7a29>
+
+[Dequeue] ([AsyncEx])
+https://github.com/StephenCleary/Deque
+Deque-1.1.1.zip <https://github.com/StephenCleary/Deque/commit/fb12d9918339a9affd11f6d5f82a29bb7e26c4a0>
+
+
+
+[trusted]
+Newtonsoft.Json
+Newtonsoft.Json.Bson
+Newtonsoft.Json.Schema
+nunit
+NUnitLite
+NUnit3TestAdapter
+Microsoft.NET.Test.Sdk

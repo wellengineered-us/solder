@@ -35,7 +35,7 @@ namespace WellEngineered.Solder.IntegrationTests.Cli
 		[STAThread]
 		public static int Main(string[] args)
 		{
-			return new AutoRun(typeof(Program).GetTypeInfo().Assembly).Execute(args, new ColorConsoleWriter(), Console.In);
+			return new AutoRun(typeof(Program).Assembly).Execute(args, new ColorConsoleWriter(), Console.In);
 		}
 
 		#endregion

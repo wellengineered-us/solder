@@ -11,9 +11,12 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\WellEngineered.Solder.Configuration\WellEngineered.Solder.Configuration.csproj" />
-		<ProjectReference Include="..\WellEngineered.Solder.Extensions\WellEngineered.Solder.Extensions.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Utilities\WellEngineered.Solder.Utilities.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	</ItemGroup>
 
 </Project>

@@ -12,7 +12,7 @@ namespace WellEngineered.Solder.Injection
 	/// <summary>
 	/// Provides dependency registration and resolution services.
 	/// </summary>
-	public interface IDependencyManager : ICreatableEx, IDisposableEx
+	public partial interface IDependencyManager : ILifecycle
 	{
 		#region Methods/Operators
 
@@ -96,7 +96,7 @@ namespace WellEngineered.Solder.Injection
 		/// <typeparam name="TResolution"> The resolution type of resolution. </typeparam>
 		/// <param name="selectorKey"> An non-null, zero or greater length string selector key. </param>
 		/// <param name="includeAssignableTypes"> A boolean value indicating whether to include assignable types in the candidate resolution lookup list. </param>
-		/// <returns> An object instance of assisgnable to the resolution type. </returns>
+		/// <returns> An object instance of assignable to the resolution type. </returns>
 		TResolution ResolveDependency<TResolution>(string selectorKey, bool includeAssignableTypes);
 
 		/// <summary>
@@ -105,7 +105,7 @@ namespace WellEngineered.Solder.Injection
 		/// <param name="resolutionType"> The resolution type of resolution. </param>
 		/// <param name="selectorKey"> An non-null, zero or greater length string selector key. </param>
 		/// <param name="includeAssignableTypes"> A boolean value indicating whether to include assignable types in the candidate resolution lookup list. </param>
-		/// <returns> An object instance of assisgnable to the resolution type. </returns>
+		/// <returns> An object instance of assignable to the resolution type. </returns>
 		object ResolveDependency(Type resolutionType, string selectorKey, bool includeAssignableTypes);
 
 		#endregion

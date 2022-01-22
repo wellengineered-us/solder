@@ -13,12 +13,12 @@ namespace WellEngineered.Solder.Interception
 	/// <summary>
 	/// Represents a run-time invocation.
 	/// </summary>
-	public interface IRuntimeInvocation : ICreatableEx, IDisposableEx
+	public partial interface IRuntimeInvocation : IDualLifecycle
 	{
 		#region Properties/Indexers/Events
 
 		/// <summary>
-		/// Gets the arguments passed to the invoked method, if appliable.
+		/// Gets the arguments passed to the invoked method, if applicable.
 		/// </summary>
 		object[] InvocationArguments
 		{

@@ -4,12 +4,12 @@
 */
 
 using System;
-using System.Collections.Generic;
 
 using NUnit.Framework;
 
 using WellEngineered.Solder.Component;
-using WellEngineered.Solder.Primitives;
+using WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs;
+using WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs.Configuration;
 
 namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 {
@@ -29,179 +29,135 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 		[Test]
 		public void ShouldCreateTest()
 		{
-			using (IComponent component = new StubComponent())
+			using (ISolderComponent0 solderComponent = new DogFoodComponent0())
 			{
-				component.Create();
-
-				//stubComponent.Dispose();
+				solderComponent.Create();
 			}
 
-			using (IConfigurableComponent<StubComponentConfiguration> component = new StubConfigurableComponent())
+			using (ISolderComponent1 solderComponent = new DogFoodComponent1())
 			{
-				component.Configuration = new StubComponentConfiguration();
-				component.Create();
+				var configuration = new DogFoodConfiguration();
 
-				//stubComponent.Dispose();
+				solderComponent.Configuration = configuration;
+				solderComponent.Create();
+
+				configuration = solderComponent.Configuration as DogFoodConfiguration;
+
+				Assert.IsNotNull(configuration);
 			}
 
-			using (ISpecifiableConfigurableComponent<UnknownComponentConfigurationObject<StubComponentSpecification>, StubComponentSpecification> component = new StubSpecifiableConfigurableComponent())
+			using (ISolderComponent2 solderComponent = new DogFoodComponent2())
 			{
-				var that = new UnknownComponentConfigurationObject();
+				var that = new UnknownEndToEndConfiguration();
 
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropA), "test");
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropB), 100);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropC), true);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropD), 10.50);
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
 
-				component.Configuration = new UnknownComponentConfigurationObject<StubComponentSpecification>(that);
-				component.Create();
+				var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
+				solderComponent.Configuration = configuration;
+				solderComponent.Create();
 
-				//Assert.AreSame(component.Configuration.ComponentSpecificConfiguration, component.Specification);
+				configuration = solderComponent.Configuration as UnknownEndToEndConfiguration<DogFoodSpecification>;
 
-				Assert.AreEqual("test", component.Specification.PropA);
-				Assert.AreEqual(100, component.Specification.PropB);
-				Assert.AreEqual(true, component.Specification.PropC);
-				Assert.AreEqual(10.50, component.Specification.PropD);
+				Assert.IsNotNull(configuration);
 
-				Assert.AreEqual("test", component.Configuration.ComponentSpecificConfiguration.PropA);
-				Assert.AreEqual(100, component.Configuration.ComponentSpecificConfiguration.PropB);
-				Assert.AreEqual(true, component.Configuration.ComponentSpecificConfiguration.PropC);
-				Assert.AreEqual(10.50, component.Configuration.ComponentSpecificConfiguration.PropD);
+				Assert.AreEqual("test", configuration.Specification.PropA);
+				Assert.AreEqual(100, configuration.Specification.PropB);
+				Assert.AreEqual(true, configuration.Specification.PropC);
+				Assert.AreEqual(10.50, configuration.Specification.PropD);
 
-				//stubComponent.Dispose();
+				var specification = solderComponent.Specification as DogFoodSpecification;
+
+				Assert.IsNotNull(specification);
+
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
 			}
-		}
-
-		[Test]
-		public void ShouldCreateTest2()
-		{
-			using (IComponent component = new StubComponent())
+			
+			using (ISolderComponent2 solderComponent = new DogFoodComponent2())
 			{
-				component.Create();
+				var that = new UnknownEndToEndConfiguration();
 
-				//stubComponent.Dispose();
-			}
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
 
-			using (IConfigurableComponent component = new StubConfigurableComponent())
-			{
-				component.Configuration = new StubComponentConfiguration();
-				component.Create();
+				var configuration = that;
+				solderComponent.Configuration = configuration;
+				solderComponent.Create();
 
-				//stubComponent.Dispose();
-			}
+				dynamic dynSpecification = solderComponent.Specification;
 
-			using (ISpecifiableConfigurableComponent component = new StubSpecifiableConfigurableComponent())
-			{
-				var that = new UnknownComponentConfigurationObject();
-
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropA), "test");
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropB), 100);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropC), true);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropD), 10.50);
-
-				component.Configuration = new UnknownComponentConfigurationObject<StubComponentSpecification>(that);
-				component.Create();
-
-				//Assert.AreSame(component.Configuration.ComponentSpecificConfiguration, component.Specification);
-
-				dynamic dynSpecification = component.Specification;
-				dynamic dynConfig = component.Configuration;
-				dynamic dynComponentSpecificConfiguration = dynConfig.ComponentSpecificConfiguration;
+				Assert.IsNotNull(dynSpecification);
 
 				Assert.AreEqual("test", dynSpecification.PropA);
 				Assert.AreEqual(100, dynSpecification.PropB);
 				Assert.AreEqual(true, dynSpecification.PropC);
 				Assert.AreEqual(10.50, dynSpecification.PropD);
 
-				Assert.AreEqual("test", dynComponentSpecificConfiguration.PropA);
-				Assert.AreEqual(100, dynComponentSpecificConfiguration.PropB);
-				Assert.AreEqual(true, dynComponentSpecificConfiguration.PropC);
-				Assert.AreEqual(10.50, dynComponentSpecificConfiguration.PropD);
+				var specification = solderComponent.Specification as DogFoodSpecification;
 
-				//stubComponent.Dispose();
+				Assert.IsNotNull(specification);
+
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
 			}
-		}
 
-		#endregion
-	}
+			using (ISolderComponent<DogFoodConfiguration> solderComponent = new DogFoodComponentTick1())
+			{
+				var configuration = new DogFoodConfiguration();
 
-	public class StubComponent : Solder.Component.Component
-	{
-	}
+				configuration.Prop1 = "test";
+				configuration.Prop2 = 100;
+				configuration.Prop3 = true;
+				configuration.Prop4 = 10.50;
 
-	public class StubConfigurableComponent : ConfigurableComponent<StubComponentConfiguration>
-	{
-	}
+				solderComponent.Configuration = configuration;
+				solderComponent.Create();
 
-	public class StubSpecifiableConfigurableComponent : SpecifiableConfigurableComponent<UnknownComponentConfigurationObject<StubComponentSpecification>, StubComponentSpecification>
-	{
-	}
+				configuration = solderComponent.Configuration as DogFoodConfiguration;
 
-	public class StubComponentConfiguration : ComponentConfigurationObject
-	{
-		#region Methods/Operators
+				Assert.IsNotNull(configuration);
 
-		protected override IEnumerable<IMessage> CoreValidate(object context)
-		{
-			yield break;
-		}
+				Assert.AreEqual("test", configuration.Prop1);
+				Assert.AreEqual(100, configuration.Prop2);
+				Assert.AreEqual(true, configuration.Prop3);
+				Assert.AreEqual(10.50, configuration.Prop4);
+			}
 
-		protected override IAsyncEnumerable<IMessage> CoreValidateAsync(object context)
-		{
-			return null;
-		}
+			using (ISolderComponent<UnknownEndToEndConfiguration<DogFoodSpecification>, DogFoodSpecification> solderComponent = new DogFoodComponentTick2())
+			{
+				var that = new UnknownEndToEndConfiguration();
 
-		#endregion
-	}
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
 
-	public class StubComponentSpecification : ComponentConfigurationObject
-	{
-		#region Constructors/Destructors
+				var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
+				solderComponent.Configuration = configuration;
+				solderComponent.Create();
 
-		public StubComponentSpecification()
-		{
-		}
+				configuration = solderComponent.Configuration as UnknownEndToEndConfiguration<DogFoodSpecification>;
 
-		#endregion
+				Assert.IsNotNull(configuration);
 
-		#region Properties/Indexers/Events
+				var specification = solderComponent.Specification as DogFoodSpecification;
 
-		public string PropA
-		{
-			get;
-			set;
-		}
+				Assert.IsNotNull(specification);
 
-		public int? PropB
-		{
-			get;
-			set;
-		}
-
-		public bool? PropC
-		{
-			get;
-			set;
-		}
-
-		public double? PropD
-		{
-			get;
-			set;
-		}
-
-		#endregion
-
-		#region Methods/Operators
-
-		protected override IEnumerable<IMessage> CoreValidate(object context)
-		{
-			yield break;
-		}
-
-		protected override IAsyncEnumerable<IMessage> CoreValidateAsync(object context)
-		{
-			return null;
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
+			}
 		}
 
 		#endregion

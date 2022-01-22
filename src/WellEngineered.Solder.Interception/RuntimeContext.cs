@@ -4,18 +4,19 @@
 */
 
 using System;
-using System.Threading.Tasks;
 
 using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Interception
 {
-	public sealed class RuntimeContext : Lifecycle, IRuntimeContext
+	public sealed partial class RuntimeContext
+		: DualLifecycle, IRuntimeContext
 	{
 		#region Constructors/Destructors
 
-		public RuntimeContext()
+		public RuntimeContext(bool continueInterception)
 		{
+			this.continueInterception = continueInterception;
 		}
 
 		#endregion
@@ -36,7 +37,7 @@ namespace WellEngineered.Solder.Interception
 			{
 				return this.continueInterception;
 			}
-			set
+			private set
 			{
 				this.continueInterception = value;
 			}
@@ -75,7 +76,7 @@ namespace WellEngineered.Solder.Interception
 			if (!this.ContinueInterception)
 				throw new InvalidOperationException(string.Format("Cannot abort interception chain; the chain has was either previously aborted or pending graceful completion."));
 
-			this.continueInterception = false;
+			this.ContinueInterception = false;
 		}
 
 		protected override void CoreCreate(bool creating)
@@ -86,16 +87,6 @@ namespace WellEngineered.Solder.Interception
 		protected override void CoreDispose(bool disposing)
 		{
 			// do nothing
-		}
-
-		protected override ValueTask CoreCreateAsync(bool creating)
-		{
-			throw new NotSupportedException();
-		}
-
-		protected override ValueTask CoreDisposeAsync(bool disposing)
-		{
-			throw new NotSupportedException();
 		}
 
 		#endregion

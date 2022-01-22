@@ -12,7 +12,7 @@ namespace WellEngineered.Solder.Interception
 	/// <summary>
 	/// Represents a run-time interception.
 	/// </summary>
-	public interface IRuntimeInterception : ICreatableEx, IDisposableEx
+	public partial interface IRuntimeInterception : IDualLifecycle
 	{
 		#region Methods/Operators
 

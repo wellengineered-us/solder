@@ -11,7 +11,8 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// A dependency resolution implementation that allows only a specific instance
 	/// to be provided, cached, and reused; the specific instance is passed as a constructor parameter.
 	/// </summary>
-	public sealed class InstanceDependencyResolution<TResolution> : DependencyResolution<TResolution>
+	public sealed partial class InstanceDependencyResolution<TResolution>
+		: DependencyResolution<TResolution>
 	{
 		#region Constructors/Destructors
 

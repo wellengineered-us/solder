@@ -128,7 +128,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <param name="obj"> The object graph to serialize. </param>
 		public void SerializeObjectToNative(XmlWriter xmlWriter, Type targetType, object obj)
 		{
-			this.XyzlSerializer.Serialize((IConfigurationObject)obj, xmlWriter);
+			this.XyzlSerializer.Serialize((ISolderConfiguration)obj, xmlWriter);
 		}
 
 		/// <summary>
@@ -159,7 +159,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <param name="obj"> The object graph to serialize. </param>
 		public override void SerializeObjectToStream(Stream stream, Type targetType, object obj)
 		{
-			this.XyzlSerializer.Serialize((IConfigurationObject)obj, stream);
+			this.XyzlSerializer.Serialize((ISolderConfiguration)obj, stream);
 		}
 
 		/// <summary>
@@ -170,7 +170,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <param name="obj"> The object graph to serialize. </param>
 		public override void SerializeObjectToTextWriter(TextWriter textWriter, Type targetType, object obj)
 		{
-			this.XyzlSerializer.Serialize((IConfigurationObject)obj, textWriter);
+			this.XyzlSerializer.Serialize((ISolderConfiguration)obj, textWriter);
 		}
 
 		#endregion

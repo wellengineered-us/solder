@@ -21,6 +21,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // ***********************************************************************
 
+#nullable enable
+
 using NUnit.Framework.Interfaces;
 
 namespace NUnit.Framework.Internal
@@ -45,8 +47,8 @@ namespace NUnit.Framework.Internal
             if (index > 0)
                 this.Name = this.Name.Substring(index + 1);
 
-            OneTimeSetUpMethods = Reflect.GetMethodsWithAttribute(TypeInfo.Type, typeof(OneTimeSetUpAttribute), true);
-            OneTimeTearDownMethods = Reflect.GetMethodsWithAttribute(TypeInfo.Type, typeof(OneTimeTearDownAttribute), true);
+            OneTimeSetUpMethods = TypeInfo.GetMethodsWithAttribute<OneTimeSetUpAttribute>(true);
+            OneTimeTearDownMethods = TypeInfo.GetMethodsWithAttribute<OneTimeTearDownAttribute>(true);
 
             CheckSetUpTearDownMethods(OneTimeSetUpMethods);
             CheckSetUpTearDownMethods(OneTimeTearDownMethods);
@@ -65,6 +67,11 @@ namespace NUnit.Framework.Internal
         #endregion
 
         #region Test Suite Overrides
+
+        /// <summary>
+        /// Gets the TypeInfo of the fixture used in running this test.
+        /// </summary>
+        public new ITypeInfo TypeInfo => base.TypeInfo!;
 
         /// <summary>
         /// Creates a filtered copy of the test suite.

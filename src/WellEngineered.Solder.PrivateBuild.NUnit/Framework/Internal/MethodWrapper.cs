@@ -21,6 +21,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // ***********************************************************************
 
+#nullable enable
+
 using System;
 using System.Reflection;
 using NUnit.Compatibility;
@@ -87,6 +89,11 @@ namespace NUnit.Framework.Internal
         {
             get { return MethodInfo.IsPublic;  }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the method is static.
+        /// </summary>
+        public bool IsStatic => MethodInfo.IsStatic;
 
         /// <summary>
         /// Gets a value indicating whether the method contains unassigned generic type parameters.
@@ -175,7 +182,7 @@ namespace NUnit.Framework.Internal
         /// <param name="fixture">The object on which to invoke the method</param>
         /// <param name="args">The argument list for the method</param>
         /// <returns>The return value from the invoked method</returns>
-        public object Invoke(object fixture, params object[] args)
+        public object? Invoke(object? fixture, params object?[]? args)
         {
             return Reflect.InvokeMethod(MethodInfo, fixture, args);
         }

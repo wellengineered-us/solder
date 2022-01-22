@@ -6,30 +6,34 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Threading;
 
 using WellEngineered.Solder.Primitives;
 
+using static WellEngineered.Solder.Primitives.Telemetry;
+
 namespace WellEngineered.Solder.Injection
 {
-	public sealed partial class ResourceManager : Lifecycle, IResourceManager
+	public sealed partial class ResourceManager
+		: DualLifecycle,
+			IResourceManager
 	{
 		#region Constructors/Destructors
 
+#if ASYNC_ALL_THE_WAY_DOWN
+
 		public ResourceManager()
 			: this(new ObjectIDGenerator(),
-				new ConcurrentDictionary<Guid?, IList<IDisposable>>(),
-				new ConcurrentDictionary<Guid?, IList<IAsyncDisposable>>())
+				new ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>>(),
+				new ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>>())
 		{
 		}
 
 		public ResourceManager(ObjectIDGenerator objectIdGenerator,
-			ConcurrentDictionary<Guid?, IList<IDisposable>> trackedResources,
-			ConcurrentDictionary<Guid?, IList<IAsyncDisposable>> asyncTrackedResources)
+			ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> trackedResources,
+			ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>> asyncTrackedResources)
 		{
 			if ((object)objectIdGenerator == null)
 				throw new ArgumentNullException(nameof(objectIdGenerator));
@@ -45,12 +49,34 @@ namespace WellEngineered.Solder.Injection
 			this.asyncTrackedResources = asyncTrackedResources;
 		}
 
+#else
+		public ResourceManager()
+			: this(new ObjectIDGenerator(),
+				new ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>>())
+		{
+		}
+
+		public ResourceManager(ObjectIDGenerator objectIdGenerator,
+			ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> trackedResources)
+		{
+			if ((object)objectIdGenerator == null)
+				throw new ArgumentNullException(nameof(objectIdGenerator));
+
+			if ((object)trackedResources == null)
+				throw new ArgumentNullException(nameof(trackedResources));
+
+			this.objectIdGenerator = objectIdGenerator;
+			this.trackedResources = trackedResources;
+		}
+
+#endif
+
 		#endregion
 
 		#region Fields/Constants
 
 		private readonly ObjectIDGenerator objectIdGenerator;
-		private readonly ConcurrentDictionary<Guid?, IList<IDisposable>> trackedResources;
+		private readonly ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> trackedResources;
 
 		#endregion
 
@@ -64,7 +90,7 @@ namespace WellEngineered.Solder.Injection
 			}
 		}
 
-		private ConcurrentDictionary<Guid?, IList<IDisposable>> TrackedResources
+		private ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> TrackedResources
 		{
 			get
 			{
@@ -92,27 +118,32 @@ namespace WellEngineered.Solder.Injection
 
 			sb = new StringBuilder();
 
-			foreach (KeyValuePair<Guid?, IList<IDisposable>> trackedResource in this.TrackedResources)
+			foreach (KeyValuePair<Guid?, IList<WeakReference<IDisposable>>> trackedResource in this.TrackedResources)
 			{
 				if ((object)trackedResource.Key == null ||
 					(object)trackedResource.Value == null)
-					throw new ResourceException(string.Format(""));
+					throw NewExceptionWithCallerInfo<ResourceException>((value) => new ResourceException(value));
 
 				Guid? slotId = trackedResource.Key;
-				IList<IDisposable> disposables = trackedResource.Value;
+				IList<WeakReference<IDisposable>> disposables = trackedResource.Value;
 				int size = disposables.Count;
 				int ezis = 0;
 
-				foreach (IDisposable disposable in disposables)
+				foreach (WeakReference<IDisposable> disposable in disposables)
 				{
-					if (disposable.GetSafeIsDisposed() ?? false)
+					IDisposableEx disposableEx;
+
+					disposable.TryGetTarget(out IDisposable _disposable);
+
+					if ((object)(disposableEx = _disposable as IDisposableEx) != null &&
+						disposableEx.IsDisposed)
 					{
 						ezis--;
 						continue;
 					}
 
 					sb.Append(Environment.NewLine);
-					sb.Append(string.Format("\t\t{0}", this.FormatObjectInfo(disposable)));
+					sb.Append(string.Format("\t\t{0}", FormatObjectInfo(this.ObjectIdGenerator, disposable)));
 				}
 
 				int offset = size + ezis;
@@ -120,7 +151,7 @@ namespace WellEngineered.Solder.Injection
 				if (offset > 0)
 				{
 					sb.Append(Environment.NewLine);
-					sb.Append(string.Format("\t{0} ~ {1}#", this.FormatGuid(slotId), offset));
+					sb.Append(string.Format("\t{0} ~ {1}#", FormatGuid(slotId), offset));
 
 					slots++;
 					objs += offset;
@@ -130,12 +161,12 @@ namespace WellEngineered.Solder.Injection
 			if (sb.Length > 0)
 				sb.Append(Environment.NewLine);
 
-			this.Print(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), string.Format("check!{0}", sb.ToString()));
+			this.Print(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), string.Format("check!{0}", sb.ToString()));
 
 			if (slots > 0)
 			{
 				string message = string.Format("Resource manager tracked resource check FAILED with {0} slots having {1} leaked disposable objects", slots, objs);
-				this.Print(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message);
+				this.Print(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message);
 			}
 		}
 
@@ -157,7 +188,8 @@ namespace WellEngineered.Solder.Injection
 
 		public void Dispose(Guid? slotId, IDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
-			IList<IDisposable> disposables;
+			IList<WeakReference<IDisposable>> disposables;
+			WeakReference<IDisposable> _disposable;
 
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -174,12 +206,14 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			if (!this.TrackedResources.TryGetValue(slotId, out disposables) || !disposables.Contains(disposable))
-				throw new ResourceException(string.Format("Leak detector does not contain a record of slot '{0} | {1}'.", this.FormatGuid(slotId), this.FormatObjectInfo(disposable)));
+			_disposable = new WeakReference<IDisposable>(disposable);
 
-			disposables.Remove(disposable);
+			if (!this.TrackedResources.TryGetValue(slotId, out disposables) || !disposables.Contains(_disposable))
+				throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, disposable));
 
-			this.Print(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), this.FormatOperation("dispose", slotId, disposable));
+			disposables.Remove(_disposable);
+
+			this.Print(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), FormatOperation(this.ObjectIdGenerator, "dispose", slotId, disposable));
 		}
 
 		public Guid? Enter([CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
@@ -197,69 +231,9 @@ namespace WellEngineered.Solder.Injection
 
 			slotId = Guid.NewGuid();
 
-			this.Print(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), this.FormatOperation("enter", slotId));
+			this.Print(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), FormatOperation("enter", slotId));
 
 			return slotId;
-		}
-
-		private string FormatCallerInfo(string callerFilePath, int? callerLineNumber, string callerMemberName)
-		{
-			if ((object)callerFilePath == null)
-				throw new ArgumentNullException(nameof(callerFilePath));
-
-			if ((object)callerLineNumber == null)
-				throw new ArgumentNullException(nameof(callerLineNumber));
-
-			if ((object)callerMemberName == null)
-				throw new ArgumentNullException(nameof(callerMemberName));
-
-			return string.Format("{0}${1}::{2}(),{3}", Path.GetFileName(callerFilePath), callerLineNumber, callerMemberName, this.FormatCurrentThreadId());
-		}
-
-		private string FormatCurrentThreadId()
-		{
-			return string.Format("{0}", Thread.CurrentThread.ManagedThreadId);
-		}
-
-		private string FormatGuid(Guid? guid)
-		{
-			if ((object)guid == null)
-				throw new ArgumentNullException(nameof(guid));
-
-			return guid.Value.ToString("N");
-		}
-
-		private string FormatObjectInfo(object obj)
-		{
-			if ((object)obj == null)
-				throw new ArgumentNullException(nameof(obj));
-
-			return string.Format("{0}@{1}", obj.GetType().FullName, this.ObjectIdGenerator.GetId(obj, out bool firstTime));
-		}
-
-		private string FormatOperation(String operation, Guid? slotId, object obj)
-		{
-			if ((object)operation == null)
-				throw new ArgumentNullException(nameof(operation));
-
-			if ((object)slotId == null)
-				throw new ArgumentNullException(nameof(slotId));
-
-			if ((object)obj == null)
-				throw new ArgumentNullException(nameof(obj));
-
-			return string.Format("{0} => {1}", this.FormatOperation(operation, slotId), this.FormatObjectInfo(obj));
-		}
-
-		private string FormatOperation(String operation, Guid? slotId)
-		{
-			if ((object)operation == null)
-				throw new ArgumentNullException(nameof(operation));
-
-			if ((object)slotId == null)
-				throw new ArgumentNullException(nameof(slotId));
-
-			return string.Format("{0}#{1}", operation, this.FormatGuid(slotId));
 		}
 
 		public TValue Leave<TValue>(Guid? slotId, TValue value, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
@@ -276,7 +250,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			this.Leave(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId);
+			this.Leave(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId);
 
 			return value;
 		}
@@ -295,7 +269,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			this.Leave(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId);
+			this.Leave(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId);
 		}
 
 		private void Leave(string caller, Guid? slotId)
@@ -306,36 +280,14 @@ namespace WellEngineered.Solder.Injection
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
 
-			this.Print(caller, this.FormatOperation("leave", slotId));
+			this.Print(caller, FormatOperation("leave", slotId));
 		}
 
-		/*public TException NewExceptionWithCallerInfo<TException>(Func<string, TException> factory,
-			[CallerFilePath] string callerFilePath = null,
-			[CallerLineNumber] int? callerLineNumber = null,
-			[CallerMemberName] string callerMemberName = null)
-			where TException : Exception, new()
+		public void Print(Guid? slotId, string message, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
-			TException ex;
+			if ((object)slotId == null)
+				throw new ArgumentNullException(nameof(slotId));
 
-			if ((object)factory == null)
-				throw new ArgumentNullException(nameof(factory));
-
-			if ((object)callerFilePath == null)
-				throw new ArgumentNullException(nameof(callerFilePath));
-
-			if ((object)callerLineNumber == null)
-				throw new ArgumentNullException(nameof(callerLineNumber));
-
-			if ((object)callerMemberName == null)
-				throw new ArgumentNullException(nameof(callerMemberName));
-
-			ex = factory(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName));
-
-			return ex;
-		}*/
-
-		public void Print(string message, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
-		{
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
 
@@ -348,7 +300,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			this.Print(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message);
+			this.Print(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), string.Format("{0}\t{1}", FormatGuid(slotId), message));
 		}
 
 		private void Print(string caller, string message)
@@ -371,11 +323,15 @@ namespace WellEngineered.Solder.Injection
 		public void Reset()
 		{
 			this.TrackedResources.Clear();
+#if ASYNC_ALL_THE_WAY_DOWN
+			this.AsyncTrackedResources.Clear();
+#endif
 		}
 
 		private void Slot(string caller, Guid? slotId, IDisposable disposable, string message)
 		{
-			IList<IDisposable> disposables;
+			IList<WeakReference<IDisposable>> disposables;
+			WeakReference<IDisposable> _disposable;
 
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -389,27 +345,31 @@ namespace WellEngineered.Solder.Injection
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
 
+			_disposable = new WeakReference<IDisposable>(disposable);
+
 			if (this.TrackedResources.TryGetValue(slotId, out disposables))
 			{
-				if (disposables.Contains(disposable))
-					throw new ResourceException(string.Format("{0}", slotId));
+				if (disposables.Contains(_disposable))
+					throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, disposable));
 			}
 			else
 			{
-				disposables = new List<IDisposable>();
+				disposables = new List<WeakReference<IDisposable>>();
 
 				if (!this.TrackedResources.TryAdd(slotId, disposables))
-					throw new ResourceException(string.Format("{0}", slotId));
+					throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, disposable));
 			}
 
-			disposables.Add(disposable);
+			disposables.Add(_disposable);
 
 			this.Print(caller, message);
 		}
 
-		public IDisposable Using(Guid? slotId, IDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public IDisposableDispatch<TDisposable> Using<TDisposable>(Guid? slotId, TDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+			where TDisposable : IDisposable
 		{
 			IDisposable ldlProxyDisposable;
+			IDisposableDispatch<TDisposable> disposableDispatch;
 
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -428,9 +388,11 @@ namespace WellEngineered.Solder.Injection
 
 			ldlProxyDisposable = new UsingBlockProxy(this, slotId, disposable); // forward call to .Dispose()
 
-			this.Slot(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, this.FormatOperation("using", slotId, disposable));
+			disposableDispatch = new DisposableDispatch<TDisposable>(ldlProxyDisposable, disposable);
 
-			return ldlProxyDisposable;
+			this.Slot(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, FormatOperation(this.ObjectIdGenerator, "using", slotId, disposable));
+
+			return disposableDispatch;
 		}
 
 		public void Watching(Guid? slotId, IDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
@@ -450,7 +412,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			this.Slot(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, this.FormatOperation("watching", slotId, disposable));
+			this.Slot(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, FormatOperation(this.ObjectIdGenerator, "watching", slotId, disposable));
 		}
 
 		public TDisposable Watching<TDisposable>(Guid? slotId, TDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
@@ -471,7 +433,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			this.Slot(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, this.FormatOperation("watching", slotId, disposable));
+			this.Slot(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, FormatOperation(this.ObjectIdGenerator, "watching", slotId, disposable));
 
 			return disposable;
 		}

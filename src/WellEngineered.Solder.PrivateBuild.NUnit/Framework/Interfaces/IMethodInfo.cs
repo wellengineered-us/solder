@@ -20,6 +20,9 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // ***********************************************************************
+
+#nullable enable
+
 using System;
 using System.Reflection;
 
@@ -57,6 +60,11 @@ namespace NUnit.Framework.Interfaces
         /// Gets a value indicating whether the method is public.
         /// </summary>
         bool IsPublic { get; }
+        
+        /// <summary>
+        /// Gets a value indicating whether the method is static.
+        /// </summary>
+        bool IsStatic { get; }
 
         /// <summary>
         /// Gets a value indicating whether the method contains unassigned generic type parameters.
@@ -106,7 +114,7 @@ namespace NUnit.Framework.Interfaces
         /// <param name="fixture">The object on which to invoke the method</param>
         /// <param name="args">The argument list for the method</param>
         /// <returns>The return value from the invoked method</returns>
-        object Invoke(object fixture, params object[] args);
+        object? Invoke(object? fixture, params object?[]? args);
 
         #endregion
     }

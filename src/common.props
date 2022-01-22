@@ -8,6 +8,7 @@
 		<DebugType>portable</DebugType>
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>..\Solder.snk</AssemblyOriginatorKeyFile>
+		<DefineConstants>ASYNC_ALL_THE_WAY_DOWN;ASYNC_MAIN_ENTRY_POINT</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -41,6 +42,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="..\Common.cs" Link="Common.cs" />
 		<None Include="..\Solder.snk" Link="Solder.snk" />
 		<None Include="..\..\LICENSE" Link="License.txt" />
 	</ItemGroup>

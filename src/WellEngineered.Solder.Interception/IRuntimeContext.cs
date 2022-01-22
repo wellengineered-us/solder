@@ -7,7 +7,8 @@ using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Interception
 {
-	public interface IRuntimeContext : ICreatableEx, IDisposableEx
+	public partial interface IRuntimeContext
+		: IDualLifecycle
 	{
 		#region Properties/Indexers/Events
 

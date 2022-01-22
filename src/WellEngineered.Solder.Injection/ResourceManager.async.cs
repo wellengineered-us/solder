@@ -3,14 +3,18 @@
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
+#if ASYNC_ALL_THE_WAY_DOWN
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using WellEngineered.Solder.Primitives;
+
+using static WellEngineered.Solder.Primitives.Telemetry;
 
 namespace WellEngineered.Solder.Injection
 {
@@ -18,13 +22,13 @@ namespace WellEngineered.Solder.Injection
 	{
 		#region Fields/Constants
 
-		private readonly ConcurrentDictionary<Guid?, IList<IAsyncDisposable>> asyncTrackedResources;
+		private readonly ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>> asyncTrackedResources;
 
 		#endregion
 
 		#region Properties/Indexers/Events
 
-		private ConcurrentDictionary<Guid?, IList<IAsyncDisposable>> AsyncTrackedResources
+		private ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>> AsyncTrackedResources
 		{
 			get
 			{
@@ -36,7 +40,7 @@ namespace WellEngineered.Solder.Injection
 
 		#region Methods/Operators
 
-		public async ValueTask CheckAsync([CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask CheckAsync(CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			StringBuilder sb;
 			int slots = 0, objs = 0;
@@ -52,27 +56,32 @@ namespace WellEngineered.Solder.Injection
 
 			sb = new StringBuilder();
 
-			foreach (KeyValuePair<Guid?, IList<IAsyncDisposable>> trackedResource in this.AsyncTrackedResources)
+			foreach (KeyValuePair<Guid?, IList<WeakReference<IAsyncDisposable>>> trackedResource in this.AsyncTrackedResources)
 			{
 				if ((object)trackedResource.Key == null ||
 					(object)trackedResource.Value == null)
-					throw new ResourceException(string.Format(""));
+					throw NewExceptionWithCallerInfo<ResourceException>((value) => new ResourceException(value));
 
 				Guid? slotId = trackedResource.Key;
-				IList<IAsyncDisposable> asyncDisposables = trackedResource.Value;
+				IList<WeakReference<IAsyncDisposable>> asyncDisposables = trackedResource.Value;
 				int size = asyncDisposables.Count;
 				int ezis = 0;
 
-				foreach (IAsyncDisposable asyncDisposable in asyncDisposables)
+				foreach (WeakReference<IAsyncDisposable> asyncDisposable in asyncDisposables)
 				{
-					if (asyncDisposable.GetSafeIsAsyncDisposed() ?? false)
+					IAsyncDisposableEx asyncDisposableEx;
+
+					asyncDisposable.TryGetTarget(out IAsyncDisposable _asynDisposable);
+
+					if ((object)(asyncDisposableEx = _asynDisposable as IAsyncDisposableEx) != null &&
+						asyncDisposableEx.IsAsyncDisposed)
 					{
 						ezis--;
 						continue;
 					}
 
 					sb.Append(Environment.NewLine);
-					sb.Append(string.Format("\t\t{0}", this.FormatObjectInfo(asyncDisposable)));
+					sb.Append(string.Format("\t\t{0}", FormatObjectInfo(this.ObjectIdGenerator, asyncDisposable)));
 				}
 
 				int offset = size + ezis;
@@ -80,7 +89,7 @@ namespace WellEngineered.Solder.Injection
 				if (offset > 0)
 				{
 					sb.Append(Environment.NewLine);
-					sb.Append(string.Format("\t{0} ~ {1}#", this.FormatGuid(slotId), offset));
+					sb.Append(string.Format("\t{0} ~ {1}#", FormatGuid(slotId), offset));
 
 					slots++;
 					objs += offset;
@@ -90,29 +99,41 @@ namespace WellEngineered.Solder.Injection
 			if (sb.Length > 0)
 				sb.Append(Environment.NewLine);
 
-			await this.PrintAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), string.Format("check_async!{0}", sb.ToString()));
+			await this.PrintAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), string.Format("check_async!{0}", sb.ToString()), cancellationToken);
 
 			if (slots > 0)
 			{
 				string message = string.Format("Resource manager tracked resource check FAILED with {0} slots having {1} leaked AsyncDisposable objects", slots, objs);
-				await this.PrintAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message);
+				await this.PrintAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message, cancellationToken);
 			}
 		}
 
-		protected override ValueTask CoreCreateAsync(bool creating)
+		protected override ValueTask CoreCreateAsync(bool creating, CancellationToken cancellationToken = default)
 		{
 			// do nothing
 			return default;
 		}
 
-		public async ValueTask DisposeAsync(Guid? slotId, IAsyncDisposable asyncDisposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		protected override async ValueTask CoreDisposeAsync(bool disposing, CancellationToken cancellationToken = default)
 		{
-			await this.DisposeAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable);
+			if (this.IsDisposed)
+				return;
+
+			if (disposing)
+			{
+				await this.ResetAsync(cancellationToken);
+			}
 		}
 
-		private async ValueTask DisposeAsync(string caller, Guid? slotId, IAsyncDisposable asyncDisposable)
+		public async ValueTask DisposeAsync(Guid? slotId, IAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
-			IList<IAsyncDisposable> asyncDisposables;
+			await this.DisposeAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, cancellationToken);
+		}
+
+		private async ValueTask DisposeAsync(string caller, Guid? slotId, IAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default)
+		{
+			IList<WeakReference<IAsyncDisposable>> asyncDisposables;
+			WeakReference<IAsyncDisposable> _asyncDisposable;
 
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -123,26 +144,17 @@ namespace WellEngineered.Solder.Injection
 			if ((object)asyncDisposable == null)
 				throw new ArgumentNullException(nameof(asyncDisposable));
 
-			if (!this.AsyncTrackedResources.TryGetValue(slotId, out asyncDisposables) || !asyncDisposables.Contains(asyncDisposable))
-				throw new ResourceException(string.Format("Leak detector does not contain a record of slot '{0} | {1}'.", this.FormatGuid(slotId), this.FormatObjectInfo(asyncDisposable)));
+			_asyncDisposable = new WeakReference<IAsyncDisposable>(asyncDisposable);
 
-			asyncDisposables.Remove(asyncDisposable);
+			if (!this.AsyncTrackedResources.TryGetValue(slotId, out asyncDisposables) || !asyncDisposables.Contains(_asyncDisposable))
+				throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, asyncDisposable));
 
-			await this.PrintAsync(caller, this.FormatOperation("dispose_async", slotId, asyncDisposable));
+			asyncDisposables.Remove(_asyncDisposable);
+
+			await this.PrintAsync(caller, FormatOperation(this.ObjectIdGenerator, "dispose_async", slotId, asyncDisposable), cancellationToken);
 		}
 
-		protected override async ValueTask CoreDisposeAsync(bool disposing)
-		{
-			if (this.IsDisposed)
-				return;
-
-			if (disposing)
-			{
-				await this.ResetAsync();
-			}
-		}
-
-		public async ValueTask<Guid?> EnterAsync([CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask<Guid?> EnterAsync(CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			Guid slotId;
 
@@ -157,12 +169,12 @@ namespace WellEngineered.Solder.Injection
 
 			slotId = Guid.NewGuid();
 
-			await this.PrintAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), this.FormatOperation("enter_async", slotId));
+			await this.PrintAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), FormatOperation("enter_async", slotId), cancellationToken);
 
 			return slotId;
 		}
 
-		public async ValueTask<TValue> LeaveAsync<TValue>(Guid? slotId, TValue value, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask<TValue> LeaveAsync<TValue>(Guid? slotId, TValue value, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -176,12 +188,12 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			await this.LeaveAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId);
+			await this.LeaveAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, cancellationToken);
 
 			return value;
 		}
 
-		public async ValueTask LeaveAsync(Guid? slotId, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask LeaveAsync(Guid? slotId, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -195,10 +207,10 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			await this.LeaveAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId);
+			await this.LeaveAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, cancellationToken);
 		}
 
-		private async ValueTask LeaveAsync(string caller, Guid? slotId)
+		private async ValueTask LeaveAsync(string caller, Guid? slotId, CancellationToken cancellationToken = default)
 		{
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -206,10 +218,10 @@ namespace WellEngineered.Solder.Injection
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
 
-			await this.PrintAsync(caller, this.FormatOperation("leave_async", slotId));
+			await this.PrintAsync(caller, FormatOperation("leave_async", slotId), cancellationToken);
 		}
 
-		public async ValueTask OnlyWhenDebugPrintAsync(string message, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask OnlyWhenDebugPrintAsync(string message, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
@@ -223,10 +235,10 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			await this.PrintAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message);
+			await this.PrintAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message, cancellationToken);
 		}
 
-		public async ValueTask PrintAsync(string message, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask PrintAsync(Guid? slotId, string message, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
@@ -240,10 +252,10 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			await this.PrintAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), message);
+			await this.PrintAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), string.Format("{0}\t{1}", FormatGuid(slotId), message), cancellationToken);
 		}
 
-		private async ValueTask PrintAsync(string caller, string message)
+		private async ValueTask PrintAsync(string caller, string message, CancellationToken cancellationToken = default)
 		{
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -260,15 +272,17 @@ namespace WellEngineered.Solder.Injection
 			Console.ForegroundColor = oldConsoleColor;
 		}
 
-		public async ValueTask ResetAsync()
+		public async ValueTask ResetAsync(CancellationToken cancellationToken = default)
 		{
+			this.TrackedResources.Clear();
 			this.AsyncTrackedResources.Clear();
 			await Task.CompletedTask;
 		}
 
-		private async ValueTask SlotAsync(string caller, Guid? slotId, IAsyncDisposable asyncDisposable, string message)
+		private async ValueTask SlotAsync(string caller, Guid? slotId, IAsyncDisposable asyncDisposable, string message, CancellationToken cancellationToken = default)
 		{
-			IList<IAsyncDisposable> asyncDisposables;
+			IList<WeakReference<IAsyncDisposable>> asyncDisposables;
+			WeakReference<IAsyncDisposable> _asyncDisposable;
 
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -282,27 +296,31 @@ namespace WellEngineered.Solder.Injection
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
 
+			_asyncDisposable = new WeakReference<IAsyncDisposable>(asyncDisposable);
+
 			if (this.AsyncTrackedResources.TryGetValue(slotId, out asyncDisposables))
 			{
-				if (asyncDisposables.Contains(asyncDisposable))
-					throw new ResourceException(string.Format("{0}", slotId));
+				if (asyncDisposables.Contains(_asyncDisposable))
+					throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, asyncDisposable));
 			}
 			else
 			{
-				asyncDisposables = new List<IAsyncDisposable>();
+				asyncDisposables = new List<WeakReference<IAsyncDisposable>>();
 
 				if (!this.AsyncTrackedResources.TryAdd(slotId, asyncDisposables))
-					throw new ResourceException(string.Format("{0}", slotId));
+					throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, asyncDisposable));
 			}
 
-			asyncDisposables.Add(asyncDisposable);
+			asyncDisposables.Add(_asyncDisposable);
 
-			await this.PrintAsync(caller, message);
+			await this.PrintAsync(caller, message, cancellationToken);
 		}
 
-		public async ValueTask<IAsyncDisposable> UsingAsync(Guid? slotId, IAsyncDisposable asyncDisposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask<IAsyncDisposableDispatch<TAsyncDisposable>> UsingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+			where TAsyncDisposable : IAsyncDisposable
 		{
 			IAsyncDisposable ldlProxyDisposable;
+			IAsyncDisposableDispatch<TAsyncDisposable> asyncDisposableDispatch;
 
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -319,14 +337,16 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			ldlProxyDisposable = new UsingBlockProxy(this, slotId, asyncDisposable); // forward call to .AsyncDispose()
+			ldlProxyDisposable = new AsyncUsingBlockProxy(this, slotId, asyncDisposable); // forward call to .AsyncDispose()
 
-			await this.SlotAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, this.FormatOperation("using_async", slotId, asyncDisposable));
+			asyncDisposableDispatch = new AsyncDisposableDispatch<TAsyncDisposable>(ldlProxyDisposable, asyncDisposable);
 
-			return ldlProxyDisposable;
+			await this.SlotAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, FormatOperation(this.ObjectIdGenerator, "using_async", slotId, asyncDisposable), cancellationToken);
+
+			return asyncDisposableDispatch;
 		}
 
-		public async ValueTask WatchingAsync(Guid? slotId, IAsyncDisposable asyncDisposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask WatchingAsync(Guid? slotId, IAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -343,10 +363,10 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			await this.SlotAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, this.FormatOperation("watching_async", slotId, asyncDisposable));
+			await this.SlotAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, FormatOperation(this.ObjectIdGenerator, "watching_async", slotId, asyncDisposable), cancellationToken);
 		}
 
-		public async ValueTask<TAsyncDisposable> WatchingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask<TAsyncDisposable> WatchingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 			where TAsyncDisposable : IAsyncDisposable
 		{
 			if ((object)slotId == null)
@@ -364,7 +384,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			await this.SlotAsync(this.FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, this.FormatOperation("watching_async", slotId, asyncDisposable));
+			await this.SlotAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, FormatOperation(this.ObjectIdGenerator, "watching_async", slotId, asyncDisposable), cancellationToken);
 
 			return asyncDisposable;
 		}
@@ -372,3 +392,4 @@ namespace WellEngineered.Solder.Injection
 		#endregion
 	}
 }
+#endif

@@ -25,7 +25,7 @@ if ($nupkg_files -eq $null)
 
 	foreach ($nupkg_file in $nupkg_files)
 	{
-		echo ("NUPKG_FILE[]: " + $nupkg_file)	
+		echo ("NUPKG_FILE[]: " + $nupkg_file)
 	}
 }
 

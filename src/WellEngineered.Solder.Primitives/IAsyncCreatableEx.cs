@@ -3,6 +3,10 @@
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
+using System.Threading;
+using System.Threading.Tasks;
+
+#if ASYNC_ALL_THE_WAY_DOWN
 namespace WellEngineered.Solder.Primitives
 {
 	public interface IAsyncCreatableEx : IAsyncCreatable
@@ -15,5 +19,12 @@ namespace WellEngineered.Solder.Primitives
 		}
 
 		#endregion
+
+		#region Methods/Operators
+
+		ValueTask CreateAsync(CancellationToken cancellationToken);
+
+		#endregion
 	}
 }
+#endif

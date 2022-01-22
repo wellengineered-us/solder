@@ -5,12 +5,13 @@
 
 namespace WellEngineered.Solder.Configuration
 {
-	public interface IConfigurable<TConfiguration> : IConfigurable
-		where TConfiguration : IConfigurationObject
+	public interface IConfigurable<TSolderConfigurationObject>
+		: IConfigurable
+		where TSolderConfigurationObject : ISolderConfiguration
 	{
 		#region Properties/Indexers/Events
 
-		new TConfiguration Configuration
+		new TSolderConfigurationObject Configuration
 		{
 			get;
 			set;

@@ -9,11 +9,12 @@ using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Injection
 {
-	internal partial class UsingBlockProxy : Lifecycle
+	internal sealed class UsingBlockProxy
+		: Lifecycle
 	{
 		#region Constructors/Destructors
 
-		private UsingBlockProxy(IResourceManager resourceManager, Guid? slotId)
+		public UsingBlockProxy(IResourceManager resourceManager, Guid? slotId, IDisposable disposable)
 		{
 			if ((object)resourceManager == null)
 				throw new ArgumentNullException(nameof(resourceManager));
@@ -21,18 +22,12 @@ namespace WellEngineered.Solder.Injection
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
 
-			this.resourceManager = resourceManager;
-			this.slotId = slotId;
-		}
-
-		public UsingBlockProxy(IResourceManager resourceManager, Guid? slotId, IDisposable disposable)
-			: this(resourceManager, slotId)
-		{
 			if ((object)disposable == null)
 				throw new ArgumentNullException(nameof(disposable));
 
+			this.resourceManager = resourceManager;
+			this.slotId = slotId;
 			this.disposable = disposable;
-			this.asyncDisposable = null;
 		}
 
 		#endregion
@@ -82,16 +77,10 @@ namespace WellEngineered.Solder.Injection
 
 		protected override void CoreDispose(bool disposing)
 		{
-			if (this.IsDisposed)
-				return;
-
-			if (disposing)
+			if ((object)this.Disposable != null)
 			{
-				if ((object)this.Disposable != null)
-				{
-					this.Disposable.Dispose();
-					this.ResourceManager.Dispose(this.SlotId, this.Disposable);
-				}
+				this.Disposable.Dispose();
+				this.ResourceManager.Dispose(this.SlotId, this.Disposable);
 			}
 		}
 

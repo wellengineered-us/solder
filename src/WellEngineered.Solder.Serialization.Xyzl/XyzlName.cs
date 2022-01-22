@@ -5,8 +5,6 @@
 
 using System;
 
-using WellEngineered.Solder.Extensions;
-
 namespace WellEngineered.Solder.Serialization.Xyzl
 {
 	/// <summary>
@@ -136,7 +134,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </returns>
 		public override string ToString()
 		{
-			return (this.NamespaceUri.SafeToString() + "#" + this.LocalName.SafeToString());
+			return (this.NamespaceUri ?? string.Empty) + "#" + (this.LocalName ?? string.Empty);
 		}
 
 		/// <summary>

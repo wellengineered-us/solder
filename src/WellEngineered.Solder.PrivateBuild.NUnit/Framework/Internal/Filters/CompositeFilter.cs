@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using NUnit.Framework.Interfaces;
 
 namespace NUnit.Framework.Internal.Filters
@@ -37,37 +38,29 @@ namespace NUnit.Framework.Internal.Filters
         /// </summary>
         public CompositeFilter()
         {
-            Filters = new List<ITestFilter>();
+            Filters = new List<TestFilter>();
         }
 
         /// <summary>
         /// Constructs a CompositeFilter from an array of filters
         /// </summary>
         /// <param name="filters"></param>
-        public CompositeFilter( params ITestFilter[] filters )
+        public CompositeFilter( params TestFilter[] filters )
         {
-            Filters = new List<ITestFilter>(filters);
-        }
-
-        /// <summary>
-        /// Adds a filter to the list of filters
-        /// </summary>
-        /// <param name="filter">The filter to be added</param>
-        public void Add(ITestFilter filter)
-        {
-            Filters.Add(filter);
+            Filters = new ReadOnlyCollection<TestFilter>(filters);
         }
 
         /// <summary>
         /// Return a list of the composing filters.
         /// </summary>
-        public IList<ITestFilter> Filters { get; }
+        public IList<TestFilter> Filters { get; }
 
         /// <summary>
         /// Checks whether the CompositeFilter is matched by a test.
         /// </summary>
         /// <param name="test">The test to be matched</param>
-        public abstract override bool Pass(ITest test);
+        /// <param name="negated">If set to <see langword="true"/> we are carrying a negation through</param>
+        public abstract override bool Pass(ITest test, bool negated);
 
         /// <summary>
         /// Checks whether the CompositeFilter is matched by a test.

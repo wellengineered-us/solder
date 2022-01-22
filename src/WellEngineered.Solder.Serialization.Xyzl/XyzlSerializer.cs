@@ -14,55 +14,34 @@ using System.Text.RegularExpressions;
 using System.Xml;
 
 using WellEngineered.Solder.Configuration;
-using WellEngineered.Solder.Extensions;
-using WellEngineered.Solder.Utilities;
+using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Serialization.Xyzl
 {
 	/// <summary>
 	/// This is a custom XML configuration object serializer/deserializer that does not suffer from the rigidities of the .NET Framework supplied ones. This implementation was designed to be fast and flexible for XML driven tools.
 	/// </summary>
-	public sealed class XyzlSerializer : IXyzlSerializer
+	public sealed partial class XyzlSerializer : IXyzlSerializer
 	{
 		#region Constructors/Destructors
 
 		/// <summary>
 		/// Initializes a new instance of the XyzlSerializer class.
-		/// <param name="dataTypeFascade"> The data type fascade. </param>
-		/// <param name="reflectionFascade"> The reflection fascade. </param>
 		/// </summary>
-		public XyzlSerializer(IDataTypeFascade dataTypeFascade, IReflectionFascade reflectionFascade)
+		public XyzlSerializer()
 		{
-			if ((object)dataTypeFascade == null)
-				throw new ArgumentNullException(nameof(dataTypeFascade));
-
-			if ((object)reflectionFascade == null)
-				throw new ArgumentNullException(nameof(reflectionFascade));
-
-			this.dataTypeFascade = dataTypeFascade;
-			this.reflectionFascade = reflectionFascade;
 		}
 
 		#endregion
 
 		#region Fields/Constants
 
-		private readonly IDataTypeFascade dataTypeFascade;
 		private readonly Dictionary<IXyzlName, Type> knownConfigurationObjectTypeRegistrations = new Dictionary<IXyzlName, Type>();
-		private readonly IReflectionFascade reflectionFascade;
 		private Type knownXmlTextObjectTypeRegistration;
 
 		#endregion
 
 		#region Properties/Indexers/Events
-
-		private IDataTypeFascade DataTypeFascade
-		{
-			get
-			{
-				return this.dataTypeFascade;
-			}
-		}
 
 		/// <summary>
 		/// Gets the known XML configuration object type registrations.
@@ -72,14 +51,6 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			get
 			{
 				return this.knownConfigurationObjectTypeRegistrations;
-			}
-		}
-
-		private IReflectionFascade ReflectionFascade
-		{
-			get
-			{
-				return this.reflectionFascade;
 			}
 		}
 
@@ -122,14 +93,14 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="fileName"> The XML file to load. </param>
 		/// <returns> An XML configuration object graph. </returns>
-		public IConfigurationObject Deserialize(string fileName)
+		public ISolderConfiguration Deserialize(string fileName)
 		{
-			IConfigurationObject document;
+			ISolderConfiguration document;
 
 			if ((object)fileName == null)
 				throw new ArgumentNullException(nameof(fileName));
 
-			if (this.DataTypeFascade.IsWhiteSpace(fileName))
+			if (string.IsNullOrWhiteSpace(fileName))
 				throw new ArgumentOutOfRangeException(nameof(fileName));
 
 			using (Stream stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -144,10 +115,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="stream"> The stream to load. </param>
 		/// <returns> An XML configuration object graph. </returns>
-		public IConfigurationObject Deserialize(Stream stream)
+		public ISolderConfiguration Deserialize(Stream stream)
 		{
 			XmlTextReader xmlTextReader;
-			IConfigurationObject document;
+			ISolderConfiguration document;
 
 			if ((object)stream == null)
 				throw new ArgumentNullException(nameof(stream));
@@ -163,14 +134,14 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="xmlReader"> The XML reader to load. </param>
 		/// <returns> An XML configuration object graph. </returns>
-		public IConfigurationObject Deserialize(XmlReader xmlReader)
+		public ISolderConfiguration Deserialize(XmlReader xmlReader)
 		{
 			IXyzlName elementXyzlName = null, attributeXyzlName, previousElementXyzlName;
 
-			IConfigurationObject documentConfigurationObject = null;
-			IConfigurationObject currentConfigurationObject;
+			ISolderConfiguration documentSolderConfiguration = null;
+			ISolderConfiguration currentSolderConfiguration;
 
-			Stack<IConfigurationObject> contextStack;
+			Stack<ISolderConfiguration> contextStack;
 			bool isEmptyElement, isTextElement;
 			Dictionary<IXyzlName, string> attributes;
 
@@ -181,7 +152,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 
 			// setup contextual data
 			attributes = new Dictionary<IXyzlName, string>();
-			contextStack = new Stack<IConfigurationObject>();
+			contextStack = new Stack<ISolderConfiguration>();
 			xmlLineInfo = xmlReader as IXmlLineInfo;
 
 			// walk the XML document
@@ -198,11 +169,11 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 					isTextElement = this.IsTextElement(contextStack, elementXyzlName ?? new XyzlName());
 
 					// get the current XML configuration object as XML text object
-					currentConfigurationObject = this.DeserializeFromXmlText(xmlLineInfo, contextStack, xmlReader.Value, isTextElement ? elementXyzlName : null);
+					currentSolderConfiguration = this.DeserializeFromXmlText(xmlLineInfo, contextStack, xmlReader.Value, isTextElement ? elementXyzlName : null);
 
 					// is this a text element? if so, deserialize into it in a special maner
 					if (isTextElement)
-						this.DeserializeFromXml(xmlLineInfo, contextStack, null, elementXyzlName, attributes, (IXyzlValueObject<string>)currentConfigurationObject);
+						this.DeserializeFromXml(xmlLineInfo, contextStack, null, elementXyzlName, attributes, (IXyzlValue<string>)currentSolderConfiguration);
 				}
 				else if (xmlReader.NodeType == XmlNodeType.Element) // actual elements
 				{
@@ -256,24 +227,24 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 					if (!isTextElement)
 					{
 						// deserialize current XML configuration object
-						currentConfigurationObject = this.DeserializeFromXml(xmlLineInfo, contextStack, previousElementXyzlName, elementXyzlName, attributes, null);
+						currentSolderConfiguration = this.DeserializeFromXml(xmlLineInfo, contextStack, previousElementXyzlName, elementXyzlName, attributes, null);
 					}
 					else
 					{
 						// use 'dummy' current XML configuration object (the parent so depth counts are correct and IsTextElement() works)
-						currentConfigurationObject = contextStack.Peek();
+						currentSolderConfiguration = contextStack.Peek();
 					}
 
 					// check context stack depth for emptiness
 					if (contextStack.Count <= 0)
 					{
 						// document element is current element when no context present
-						documentConfigurationObject = currentConfigurationObject;
+						documentSolderConfiguration = currentSolderConfiguration;
 					}
 
 					// push current XML configuration object as parent XML configuration object if there are children possible (no empty element)
 					if (!isEmptyElement)
-						contextStack.Push(currentConfigurationObject);
+						contextStack.Push(currentSolderConfiguration);
 				}
 				else if (xmlReader.NodeType == XmlNodeType.EndElement) // closing element
 				{
@@ -306,7 +277,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				throw new XyzlException(string.Format("TODO: error message"));
 
 			// ...and I'm spent!
-			return documentConfigurationObject;
+			return documentSolderConfiguration;
 		}
 
 		/// <summary>
@@ -314,10 +285,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="textReader"> The text reader to load. </param>
 		/// <returns> An XML configuration object graph. </returns>
-		public IConfigurationObject Deserialize(TextReader textReader)
+		public ISolderConfiguration Deserialize(TextReader textReader)
 		{
 			XmlTextReader xmlTextReader;
-			IConfigurationObject document;
+			ISolderConfiguration document;
 
 			if ((object)textReader == null)
 				throw new ArgumentNullException(nameof(textReader));
@@ -335,16 +306,16 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <param name="previousElementXyzlName"> The previously encountered XML name (parent). </param>
 		/// <param name="currentElementXyzlName"> The current XML name (current). </param>
 		/// <param name="attributes"> The current attributes for the current XML configuration object. </param>
-		/// <param name="overrideCurrentXmlTextObject"> A special overriding XML text object. </param>
+		/// <param name="overrideCurrentXyzlText"> A special overriding XML text object. </param>
 		/// <returns> The created current XML configuration object. </returns>
-		private IConfigurationObject DeserializeFromXml(IXmlLineInfo xmlLineInfo, Stack<IConfigurationObject> contextStack, IXyzlName previousElementXyzlName, IXyzlName currentElementXyzlName, IDictionary<IXyzlName, string> attributes, IXyzlValueObject<string> overrideCurrentXmlTextObject)
+		private ISolderConfiguration DeserializeFromXml(IXmlLineInfo xmlLineInfo, Stack<ISolderConfiguration> contextStack, IXyzlName previousElementXyzlName, IXyzlName currentElementXyzlName, IDictionary<IXyzlName, string> attributes, IXyzlValue<string> overrideCurrentXyzlText)
 		{
-			IConfigurationObject currentConfigurationObject;
+			ISolderConfiguration currentSolderConfiguration;
 			Type currentType;
 			PropertyInfo[] currentPropertyInfos;
 			XyzlElementMappingAttribute currentXyzlElementMappingAttribute;
 
-			IConfigurationObject parentConfigurationObject = null;
+			ISolderConfiguration parentSolderConfiguration = null;
 			Type parentType = null;
 			PropertyInfo[] parentPropertyInfos;
 			XyzlElementMappingAttribute parentXyzlElementMappingAttribute = null;
@@ -378,20 +349,20 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)attributes == null)
 				throw new ArgumentNullException(nameof(attributes));
 
-			if (this.DataTypeFascade.IsNullOrWhiteSpace(currentElementXyzlName.LocalName))
+			if (string.IsNullOrWhiteSpace(currentElementXyzlName.LocalName))
 				throw new ArgumentOutOfRangeException(nameof(currentElementXyzlName));
 
 			if (contextStack.Count > 0) // is this NOT the root node?
 			{
 				// element on stack is parent
-				parentConfigurationObject = contextStack.Peek();
+				parentSolderConfiguration = contextStack.Peek();
 
 				// sanity check
-				if ((object)parentConfigurationObject == null)
+				if ((object)parentSolderConfiguration == null)
 					throw new XyzlException(string.Format("TODO: error message"));
 
 				// interogate parent XML configuration object
-				parentType = parentConfigurationObject.GetType();
+				parentType = parentSolderConfiguration.GetType();
 				parentPropertyInfos = parentType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
 				// sanity check
@@ -399,7 +370,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 					throw new XyzlException(string.Format("TODO: error message"));
 
 				// get parent mapping metadata
-				parentXyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(parentType);
+				parentXyzlElementMappingAttribute = parentType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 				// sanity check
 				if ((object)parentXyzlElementMappingAttribute == null)
@@ -412,10 +383,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				foreach (PropertyInfo parentPropertyInfo in parentPropertyInfos)
 				{
 					// get potential attribute mapping metadata
-					xyzlAttributeMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlAttributeMappingAttribute>(parentPropertyInfo);
+					xyzlAttributeMappingAttribute = parentPropertyInfo.GetOneAttribute<XyzlAttributeMappingAttribute>();
 
 					// get the potential child mapping metadata
-					xyzlChildElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlChildElementMappingAttribute>(parentPropertyInfo);
+					xyzlChildElementMappingAttribute = parentPropertyInfo.GetOneAttribute<XyzlChildElementMappingAttribute>();
 
 					// count what we found; there can only be one
 					attributeCount = 0;
@@ -434,7 +405,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				}
 
 				// is this a text element node override?
-				if ((object)overrideCurrentXmlTextObject != null)
+				if ((object)overrideCurrentXyzlText != null)
 				{
 					string svalue;
 					object ovalue;
@@ -442,8 +413,8 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 					// resolve the mapping to get text element property
 					parentPropertyToChildElementMapping = parentPropertyToChildElementMappings
 						.Where(x => x.Value.ChildElementType == XyzlChildType.Value)
-						.Select(x => (KeyValuePair<PropertyInfo, XyzlChildElementMappingAttribute>?)x).Where(x => x.Value.Value.LocalName == overrideCurrentXmlTextObject.Name.LocalName &&
-																												x.Value.Value.NamespaceUri == overrideCurrentXmlTextObject.Name.NamespaceUri).SingleOrDefault();
+						.Select(x => (KeyValuePair<PropertyInfo, XyzlChildElementMappingAttribute>?)x).Where(x => x.Value.Value.LocalName == overrideCurrentXyzlText.Name.LocalName &&
+																												x.Value.Value.NamespaceUri == overrideCurrentXyzlText.Name.NamespaceUri).SingleOrDefault();
 
 					// sanity check
 					if ((object)parentPropertyToChildElementMapping == null)
@@ -454,14 +425,14 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// get the raw string value
-					svalue = overrideCurrentXmlTextObject.Value;
+					svalue = overrideCurrentXyzlText.Value;
 
 					// convert to strongly-typed value
-					if (!this.DataTypeFascade.TryParse(parentPropertyToChildElementMapping.Value.Key.PropertyType, svalue, out ovalue))
-						ovalue = this.DataTypeFascade.DefaultValue(parentPropertyToChildElementMapping.Value.Key.PropertyType);
+					if (!svalue.TryParse(parentPropertyToChildElementMapping.Value.Key.PropertyType, out ovalue))
+						ovalue = parentPropertyToChildElementMapping.Value.Key.PropertyType.DefaultValue();
 
 					// attempt to set the value
-					if (!this.ReflectionFascade.SetLogicalPropertyValue(parentConfigurationObject, parentPropertyToChildElementMapping.Value.Key.Name, ovalue))
+					if (!parentSolderConfiguration.SetLogicalPropertyValue(parentPropertyToChildElementMapping.Value.Key.Name, ovalue))
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// return null to prevent recursion
@@ -504,7 +475,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// get parent-of-child mapping metadata
-					parentOfChildXyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(parentPropertyToChildElementMapping.Value.Key.PropertyType);
+					parentOfChildXyzlElementMappingAttribute = parentPropertyToChildElementMapping.Value.Key.PropertyType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 					// sanity check
 					if ((object)parentOfChildXyzlElementMappingAttribute == null)
@@ -517,15 +488,15 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			}
 
 			// factory-up the new XML configuration object based on registered types
-			currentConfigurationObject = this.ResolveConfigurationObject(currentElementXyzlName);
+			currentSolderConfiguration = this.ResolveConfigurationObject(currentElementXyzlName);
 
 			// sanity check
-			if ((object)currentConfigurationObject == null)
+			if ((object)currentSolderConfiguration == null)
 				throw new XyzlException(string.Format("currentElementXyzlName: '{0}'", currentElementXyzlName));
 			;
 
 			// interogate the current type
-			currentType = currentConfigurationObject.GetType();
+			currentType = currentSolderConfiguration.GetType();
 			currentPropertyInfos = currentType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
 			// sanity check
@@ -533,7 +504,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				throw new XyzlException(string.Format("TODO: error message"));
 
 			// get current mapping metadata
-			currentXyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(currentType);
+			currentXyzlElementMappingAttribute = currentType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 			// sanity check
 			if ((object)currentXyzlElementMappingAttribute == null)
@@ -546,10 +517,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			foreach (PropertyInfo currentPropertyInfo in currentPropertyInfos)
 			{
 				// get potential attribute mapping metadata
-				xyzlAttributeMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlAttributeMappingAttribute>(currentPropertyInfo);
+				xyzlAttributeMappingAttribute = currentPropertyInfo.GetOneAttribute<XyzlAttributeMappingAttribute>();
 
 				// get the potential child mapping metadata
-				xyzlChildElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlChildElementMappingAttribute>(currentPropertyInfo);
+				xyzlChildElementMappingAttribute = currentPropertyInfo.GetOneAttribute<XyzlChildElementMappingAttribute>();
 
 				// count what we found; there can only be one
 				attributeCount = 0;
@@ -586,11 +557,11 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 						.Select(a => a.Value).SingleOrDefault();
 
 					// convert to strongly-typed value
-					if (!this.DataTypeFascade.TryParse(currentPropertyToAttributeMapping.Key.PropertyType, svalue, out ovalue))
-						ovalue = this.DataTypeFascade.DefaultValue(currentPropertyToAttributeMapping.Key.PropertyType);
+					if (!svalue.TryParse(currentPropertyToAttributeMapping.Key.PropertyType, out ovalue))
+						ovalue = currentPropertyToAttributeMapping.Key.PropertyType.DefaultValue();
 
 					// attempt to set the values
-					if (!this.ReflectionFascade.SetLogicalPropertyValue(currentConfigurationObject, currentPropertyToAttributeMapping.Key.Name, ovalue))
+					if (!currentSolderConfiguration.SetLogicalPropertyValue(currentPropertyToAttributeMapping.Key.Name, ovalue))
 						throw new XyzlException(string.Format("TODO: error message"));
 				}
 			}
@@ -599,7 +570,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)parentPropertyToChildElementMapping != null)
 			{
 				// store this as a child element of parent XML configuration object
-				if (!this.ReflectionFascade.SetLogicalPropertyValue(parentConfigurationObject, parentPropertyToChildElementMapping.Value.Key.Name, currentConfigurationObject))
+				if (!parentSolderConfiguration.SetLogicalPropertyValue(parentPropertyToChildElementMapping.Value.Key.Name, currentSolderConfiguration))
 					throw new XyzlException(string.Format("TODO: error message"));
 			}
 			else if ((object)parentXyzlElementMappingAttribute != null)
@@ -607,40 +578,40 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				// store this as an element of parent XML configuration object
 
 				// sanity check
-				if ((object)parentConfigurationObject == null)
+				if ((object)parentSolderConfiguration == null)
 					throw new XyzlException(string.Format("TODO: error message"));
 
 				if (parentXyzlElementMappingAttribute.ChildElementMode == XyzlChildMode.Content)
 				{
 					// only one content element is allowed, check to see if it is non-null instance
-					if ((object)parentConfigurationObject.Content != null)
+					if ((object)parentSolderConfiguration.Content != null)
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// assign to anonymous content property
-					parentConfigurationObject.Content = currentConfigurationObject;
+					parentSolderConfiguration.Content = currentSolderConfiguration;
 				}
 				else if (parentXyzlElementMappingAttribute.ChildElementMode == XyzlChildMode.Items)
 				{
 					// any number of elements are allowed
 
 					// sanity check
-					if ((object)parentConfigurationObject.AllowedChildTypes == null)
+					if ((object)parentSolderConfiguration.AllowedChildTypes == null)
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// sanity check
-					if ((object)parentConfigurationObject.Items == null)
+					if ((object)parentSolderConfiguration.Items == null)
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// new collection type check
-					if (parentConfigurationObject.AllowedChildTypes.Count(t => t.IsAssignableFrom(currentType)) <= 0)
+					if (parentSolderConfiguration.AllowedChildTypes.Count(t => t.IsAssignableFrom(currentType)) <= 0)
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// add to anonymous collection
-					parentConfigurationObject.Items.Add(currentConfigurationObject);
+					parentSolderConfiguration.Items.Add(currentSolderConfiguration);
 				}
 			}
 
-			return currentConfigurationObject; // return current XML configuration object
+			return currentSolderConfiguration; // return current XML configuration object
 		}
 
 		/// <summary>
@@ -650,10 +621,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <param name="textValue"> The string value of the text element. </param>
 		/// <param name="xyzlName"> The in-effect XML name. </param>
 		/// <returns> The created current XML text object. </returns>
-		private IXyzlValueObject<string> DeserializeFromXmlText(IXmlLineInfo xmlLineInfo, Stack<IConfigurationObject> contextStack, string textValue, IXyzlName xyzlName)
+		private IXyzlValue<string> DeserializeFromXmlText(IXmlLineInfo xmlLineInfo, Stack<ISolderConfiguration> contextStack, string textValue, IXyzlName xyzlName)
 		{
-			IXyzlValueObject<string> currentXmlTextObject;
-			IConfigurationObject parentConfigurationObject;
+			IXyzlValue<string> currentXyzlText;
+			ISolderConfiguration parentSolderConfiguration;
 			Type parentType;
 			XyzlElementMappingAttribute parentXyzlElementMappingAttribute;
 
@@ -668,24 +639,24 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				throw new XyzlException(string.Format("TODO: error message"));
 
 			// resolve the XML text object
-			currentXmlTextObject = this.ResolveXmlTextObject(textValue);
+			currentXyzlText = this.ResolveXmlTextObject(textValue);
 
 			// sanity check
-			if ((object)currentXmlTextObject == null)
+			if ((object)currentXyzlText == null)
 				throw new XyzlException(string.Format("TODO: error message"));
 
 			// grab the parent XML configuration object
-			parentConfigurationObject = contextStack.Peek();
+			parentSolderConfiguration = contextStack.Peek();
 
 			// sanity check
-			if ((object)parentConfigurationObject == null)
+			if ((object)parentSolderConfiguration == null)
 				throw new XyzlException(string.Format("TODO: error message"));
 
 			// interogate the parent
-			parentType = parentConfigurationObject.GetType();
+			parentType = parentSolderConfiguration.GetType();
 
 			// get the parent emlement mapping metadata
-			parentXyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(parentType);
+			parentXyzlElementMappingAttribute = parentType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 			// sanity check
 			if ((object)parentXyzlElementMappingAttribute == null)
@@ -695,7 +666,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)xyzlName != null)
 			{
 				// named, thus assign name and do not add to anonymous child element collection
-				currentXmlTextObject.Name = xyzlName;
+				currentXyzlText.Name = xyzlName;
 			}
 			else
 			{
@@ -704,29 +675,29 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 					throw new XyzlException(string.Format("TODO: error message"));
 
 				// sanity check
-				if ((object)parentConfigurationObject.Items == null)
+				if ((object)parentSolderConfiguration.Items == null)
 					throw new XyzlException(string.Format("TODO: error message"));
 
 				// anonymous, thus add to anonymous child element collection
 				// daniel.bullington@wellengineered.us / 2012-10-29 (Issue #32): no longer need to explicitly assign parent
-				// currentXmlTextObject.Parent = parentConfigurationObject;
-				parentConfigurationObject.Items.Add(currentXmlTextObject);
+				// currentXyzlText.Parent = parentConfigurationObject;
+				parentSolderConfiguration.Items.Add(currentXyzlText);
 			}
 
-			return currentXmlTextObject;
+			return currentXyzlText;
 		}
 
-		private IXyzlName GetConfiguredName(IConfigurationObject configurationObject)
+		private IXyzlName GetConfiguredName(ISolderConfiguration solderConfiguration)
 		{
 			Type xmlObjectType;
 			IXyzlName xyzlName;
 			XyzlElementMappingAttribute xyzlElementMappingAttribute;
 
-			if ((object)configurationObject == null)
-				throw new ArgumentNullException(nameof(configurationObject));
+			if ((object)solderConfiguration == null)
+				throw new ArgumentNullException(nameof(solderConfiguration));
 
-			xmlObjectType = configurationObject.GetType();
-			xyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(xmlObjectType);
+			xmlObjectType = solderConfiguration.GetType();
+			xyzlElementMappingAttribute = xmlObjectType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 			if ((object)xyzlElementMappingAttribute == null)
 				xyzlName = null;
@@ -749,9 +720,9 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <param name="contextStack"> The effective context stack. </param>
 		/// <param name="xyzlName"> The XML name to use. </param>
 		/// <returns> A value indicating whether the element is a text element. </returns>
-		private bool IsTextElement(Stack<IConfigurationObject> contextStack, IXyzlName xyzlName)
+		private bool IsTextElement(Stack<ISolderConfiguration> contextStack, IXyzlName xyzlName)
 		{
-			IConfigurationObject parentConfigurationObject;
+			ISolderConfiguration parentSolderConfiguration;
 			Type parentType;
 			PropertyInfo[] parentPropertyInfos;
 
@@ -771,8 +742,8 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				return false;
 
 			// interogate the parent (last pushed value)
-			parentConfigurationObject = contextStack.Peek();
-			parentType = parentConfigurationObject.GetType();
+			parentSolderConfiguration = contextStack.Peek();
+			parentType = parentSolderConfiguration.GetType();
 			parentPropertyInfos = parentType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
 			// examine parent mapping tables for attributes and child elements
@@ -781,10 +752,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				foreach (PropertyInfo parentPropertyInfo in parentPropertyInfos)
 				{
 					// get potential attribute mapping metadata
-					xyzlAttributeMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlAttributeMappingAttribute>(parentPropertyInfo);
+					xyzlAttributeMappingAttribute = parentPropertyInfo.GetOneAttribute<XyzlAttributeMappingAttribute>();
 
 					// get the potential child mapping metadata
-					xyzlChildElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlChildElementMappingAttribute>(parentPropertyInfo);
+					xyzlChildElementMappingAttribute = parentPropertyInfo.GetOneAttribute<XyzlChildElementMappingAttribute>();
 
 					// count what we found; there can only be one
 					attributeCount = 0;
@@ -817,7 +788,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <typeparam name="TObject"> The target type to register. </typeparam>
 		/// <param name="xyzlName"> The XML name (local name and namespace URI). </param>
 		public void RegisterKnownObject<TObject>(IXyzlName xyzlName)
-			where TObject : IConfigurationObject
+			where TObject : ISolderConfiguration
 		{
 			Type targetType;
 
@@ -845,7 +816,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if (this.KnownConfigurationObjectTypeRegistrations.ContainsKey(xyzlName))
 				throw new XyzlException(string.Format("typeFullName: '{0}'", targetType.FullName));
 
-			if (!typeof(IConfigurationObject).IsAssignableFrom(targetType))
+			if (!typeof(ISolderConfiguration).IsAssignableFrom(targetType))
 				throw new XyzlException(string.Format("typeFullName: '{0}'", targetType.FullName));
 
 			this.KnownConfigurationObjectTypeRegistrations.Add(xyzlName, targetType);
@@ -856,7 +827,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <typeparam name="TObject"> The target type to register. </typeparam>
 		public void RegisterKnownObject<TObject>()
-			where TObject : IConfigurationObject
+			where TObject : ISolderConfiguration
 		{
 			Type targetType;
 
@@ -877,7 +848,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)targetType == null)
 				throw new ArgumentNullException(nameof(targetType));
 
-			xyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(targetType);
+			xyzlElementMappingAttribute = targetType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 			if ((object)xyzlElementMappingAttribute == null)
 				throw new XyzlException(string.Format("TODO: error message"));
@@ -896,7 +867,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <typeparam name="TObject"> The target type to register. </typeparam>
 		public void RegisterKnownValueObject<TObject>()
-			where TObject : IXyzlValueObject<string>
+			where TObject : IXyzlValue<string>
 		{
 			Type targetType;
 
@@ -918,7 +889,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				throw new XyzlException(string.Format("typeFullName: '{0}'", targetType.FullName));
 			;
 
-			if (!typeof(IXyzlValueObject<string>).IsAssignableFrom(targetType))
+			if (!typeof(IXyzlValue<string>).IsAssignableFrom(targetType))
 				throw new XyzlException(string.Format("typeFullName: '{0}'", targetType.FullName));
 			;
 
@@ -929,11 +900,11 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// Private method to resolve an XML configuration object by XML name.
 		/// </summary>
 		/// <param name="xyzlName"> The XML name to lookup in the known registrations. </param>
-		/// <returns> An IAsyncConfigurationObject instance or null if the XML name is not known. </returns>
-		private IConfigurationObject ResolveConfigurationObject(IXyzlName xyzlName)
+		/// <returns> An IConfigurationObject instance or null if the XML name is not known. </returns>
+		private ISolderConfiguration ResolveConfigurationObject(IXyzlName xyzlName)
 		{
 			object value;
-			IConfigurationObject xmlObject;
+			ISolderConfiguration solderConfiguration;
 			Type targetType;
 
 			if ((object)xyzlName == null)
@@ -947,12 +918,12 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 
 			value = Activator.CreateInstance(targetType);
 
-			xmlObject = value as IConfigurationObject;
+			solderConfiguration = value as ISolderConfiguration;
 
-			if ((object)xmlObject == null)
+			if ((object)solderConfiguration == null)
 				throw new XyzlException(string.Format("TODO: error message"));
 
-			return xmlObject;
+			return solderConfiguration;
 		}
 
 		/// <summary>
@@ -960,10 +931,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="text"> The string value of the XML text object. </param>
 		/// <returns> An IXmlTextObject instance or null if it is not known. </returns>
-		private IXyzlValueObject<string> ResolveXmlTextObject(string text)
+		private IXyzlValue<string> ResolveXmlTextObject(string text)
 		{
 			object value;
-			IXyzlValueObject<string> xmlTextObject;
+			IXyzlValue<string> xyzlText;
 			Type targetType;
 
 			if ((object)this.KnownXmlTextObjectTypeRegistration == null)
@@ -976,14 +947,14 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 
 			value = Activator.CreateInstance(targetType);
 
-			xmlTextObject = value as IXyzlValueObject<string>;
+			xyzlText = value as IXyzlValue<string>;
 
-			if ((object)xmlTextObject == null)
+			if ((object)xyzlText == null)
 				throw new XyzlException(string.Format("TODO: error message"));
 
-			xmlTextObject.Value = text;
+			xyzlText.Value = text;
 
-			return xmlTextObject;
+			return xyzlText;
 		}
 
 		/// <summary>
@@ -991,7 +962,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="document"> The document root XML configuration object. </param>
 		/// <param name="fileName"> The XML file to save. </param>
-		public void Serialize(IConfigurationObject document, string fileName)
+		public void Serialize(ISolderConfiguration document, string fileName)
 		{
 			if ((object)document == null)
 				throw new ArgumentNullException(nameof(document));
@@ -999,7 +970,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)fileName == null)
 				throw new ArgumentNullException(nameof(fileName));
 
-			if (this.DataTypeFascade.IsWhiteSpace(fileName))
+			if (string.IsNullOrWhiteSpace(fileName))
 				throw new ArgumentOutOfRangeException(nameof(fileName));
 
 			using (Stream stream = File.Open(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -1011,7 +982,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="document"> The document root XML configuration object. </param>
 		/// <param name="stream"> The stream to save. </param>
-		public void Serialize(IConfigurationObject document, Stream stream)
+		public void Serialize(ISolderConfiguration document, Stream stream)
 		{
 			XmlTextWriter xmlTextWriter;
 
@@ -1036,7 +1007,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// </summary>
 		/// <param name="document"> The document root XML configuration object. </param>
 		/// <param name="xmlWriter"> The XML writer to save. </param>
-		public void Serialize(IConfigurationObject document, XmlWriter xmlWriter)
+		public void Serialize(ISolderConfiguration document, XmlWriter xmlWriter)
 		{
 			XmlTextWriter xmlTextWriter;
 
@@ -1059,7 +1030,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			this.SerializeToXml(xmlWriter, document, null);
 		}
 
-		public void Serialize(IConfigurationObject document, TextWriter textWriter)
+		public void Serialize(ISolderConfiguration document, TextWriter textWriter)
 		{
 			XmlTextWriter xmlTextWriter;
 
@@ -1079,9 +1050,9 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			xmlTextWriter.Flush();
 		}
 
-		private void SerializeToXml(XmlWriter xmlWriter, IConfigurationObject currentConfigurationObject, IXyzlName overrideXyzlName)
+		private void SerializeToXml(XmlWriter xmlWriter, ISolderConfiguration currentSolderConfiguration, IXyzlName overrideXyzlName)
 		{
-			IXyzlValueObject<string> currentXmlTextObject;
+			IXyzlValue<string> currentXyzlText;
 			Type currentType;
 			PropertyInfo[] currentPropertyInfos;
 			XyzlElementMappingAttribute currentXyzlElementMappingAttribute;
@@ -1099,25 +1070,25 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)xmlWriter == null)
 				throw new ArgumentNullException(nameof(xmlWriter));
 
-			if ((object)currentConfigurationObject == null)
-				throw new ArgumentNullException(nameof(currentConfigurationObject));
+			if ((object)currentSolderConfiguration == null)
+				throw new ArgumentNullException(nameof(currentSolderConfiguration));
 
 			// is this a text element?
-			currentXmlTextObject = currentConfigurationObject as IXyzlValueObject<string>;
+			currentXyzlText = currentSolderConfiguration as IXyzlValue<string>;
 
-			if ((object)currentXmlTextObject != null)
+			if ((object)currentXyzlText != null)
 			{
 				// write as CDATA if name is invalid (expected)
-				if ((object)currentXmlTextObject.Name == null ||
-					this.DataTypeFascade.IsNullOrWhiteSpace(currentXmlTextObject.Name.LocalName))
+				if ((object)currentXyzlText.Name == null ||
+					string.IsNullOrWhiteSpace(currentXyzlText.Name.LocalName))
 				{
-					xmlWriter.WriteCData(currentXmlTextObject.Value);
+					xmlWriter.WriteCData(currentXyzlText.Value);
 					return;
 				}
 			}
 
 			// interogate the current XML configuration object
-			currentType = currentConfigurationObject.GetType();
+			currentType = currentSolderConfiguration.GetType();
 			currentPropertyInfos = currentType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
 			// sanity check
@@ -1125,7 +1096,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				throw new XyzlException(string.Format("TODO: error message"));
 
 			// get the current mapping metadata
-			currentXyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(currentType);
+			currentXyzlElementMappingAttribute = currentType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 			// sanity check
 			if ((object)currentXyzlElementMappingAttribute == null)
@@ -1138,10 +1109,10 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			foreach (PropertyInfo currentPropertyInfo in currentPropertyInfos)
 			{
 				// get potential attribute mapping metadata
-				xyzlAttributeMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlAttributeMappingAttribute>(currentPropertyInfo);
+				xyzlAttributeMappingAttribute = currentPropertyInfo.GetOneAttribute<XyzlAttributeMappingAttribute>();
 
 				// get potential child element mapping metadata
-				xyzlChildElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlChildElementMappingAttribute>(currentPropertyInfo);
+				xyzlChildElementMappingAttribute = currentPropertyInfo.GetOneAttribute<XyzlChildElementMappingAttribute>();
 
 				// count what we found; there can only be one
 				attributeCount = 0;
@@ -1161,7 +1132,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 
 			// begin current element
 			if ((object)overrideXyzlName != null &&
-				!this.DataTypeFascade.IsNullOrWhiteSpace(overrideXyzlName.LocalName)) // overriden element is special case for parent DOT property convention
+				!string.IsNullOrWhiteSpace(overrideXyzlName.LocalName)) // overriden element is special case for parent DOT property convention
 			{
 				// write the start of the element
 				xmlWriter.WriteStartElement(overrideXyzlName.LocalName, overrideXyzlName.NamespaceUri);
@@ -1169,7 +1140,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			else
 			{
 				// sanity check
-				if (this.DataTypeFascade.IsNullOrWhiteSpace(currentXyzlElementMappingAttribute.LocalName))
+				if (string.IsNullOrWhiteSpace(currentXyzlElementMappingAttribute.LocalName))
 					throw new XyzlException(string.Format("TODO: error message"));
 
 				// write the start of the element
@@ -1186,11 +1157,11 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// get the strongly-typed value
-					if (!this.ReflectionFascade.GetLogicalPropertyValue(currentConfigurationObject, currentPropertyToAttributeMapping.Key.Name, out ovalue))
+					if (!currentSolderConfiguration.GetLogicalPropertyValue(currentPropertyToAttributeMapping.Key.Name, out ovalue))
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// convert to loosely-typed formatted string
-					svalue = ovalue.SafeToString();
+					svalue = ovalue?.ToString() ?? string.Empty;
 
 					// write the attribute and value
 					xmlWriter.WriteStartAttribute(currentPropertyToAttributeMapping.Value.LocalName, currentPropertyToAttributeMapping.Value.NamespaceUri);
@@ -1207,13 +1178,13 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 					if (!currentPropertyToChildElementMapping.Key.CanRead)
 						throw new XyzlException(string.Format("TODO: error message"));
 
-					if (this.DataTypeFascade.IsNullOrWhiteSpace(currentPropertyToChildElementMapping.Value.LocalName))
+					if (string.IsNullOrWhiteSpace(currentPropertyToChildElementMapping.Value.LocalName))
 						throw new XyzlException(string.Format("TODO: error message"));
 
-					if (!this.ReflectionFascade.GetLogicalPropertyValue(currentConfigurationObject, currentPropertyToChildElementMapping.Key.Name, out ovalue))
+					if (!currentSolderConfiguration.GetLogicalPropertyValue(currentPropertyToChildElementMapping.Key.Name, out ovalue))
 						throw new XyzlException(string.Format("TODO: error message"));
 
-					svalue = ovalue.SafeToString();
+					svalue = ovalue?.ToString() ?? string.Empty;
 
 					xmlWriter.WriteElementString(string.Empty, currentPropertyToChildElementMapping.Value.LocalName, currentPropertyToChildElementMapping.Value.NamespaceUri, svalue);
 				}
@@ -1221,7 +1192,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				// write child elements
 				foreach (KeyValuePair<PropertyInfo, XyzlChildElementMappingAttribute> currentPropertyToChildElementMapping in currentPropertyToChildElementMappings.Where(m => m.Value.ChildElementType != XyzlChildType.Value).OrderBy(m => m.Value.Order).ThenBy(m => m.Value.LocalName))
 				{
-					IConfigurationObject childElement;
+					ISolderConfiguration childElement;
 					IXyzlName xyzlName;
 
 					// sanity check
@@ -1229,14 +1200,14 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 						throw new XyzlException(string.Format("TODO: error message"));
 
 					// sanity check
-					if (!typeof(IConfigurationObject).IsAssignableFrom(currentPropertyToChildElementMapping.Key.PropertyType))
+					if (!typeof(ISolderConfiguration).IsAssignableFrom(currentPropertyToChildElementMapping.Key.PropertyType))
 						throw new XyzlException(string.Format("typeFullName: '{0}'", currentPropertyToChildElementMapping.Key.PropertyType.FullName));
 
 					// get the XML configuration object property value
 					object _out;
-					if (!this.ReflectionFascade.GetLogicalPropertyValue(currentConfigurationObject, currentPropertyToChildElementMapping.Key.Name, out _out))
+					if (!currentSolderConfiguration.GetLogicalPropertyValue(currentPropertyToChildElementMapping.Key.Name, out _out))
 						throw new XyzlException(string.Format("TODO: error message"));
-					childElement = (IConfigurationObject)_out;
+					childElement = (ISolderConfiguration)_out;
 
 					// write the child element if not null
 					if ((object)childElement != null)
@@ -1274,17 +1245,17 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 
 			// write anonymous child elements (depending on element model)
 			if (currentXyzlElementMappingAttribute.ChildElementMode == XyzlChildMode.Items &&
-				(object)currentConfigurationObject.Items != null)
+				(object)currentSolderConfiguration.Items != null)
 			{
 				// anonymous 0..n child elements
-				foreach (IConfigurationObject childElement in currentConfigurationObject.Items)
+				foreach (ISolderConfiguration childElement in currentSolderConfiguration.Items)
 					this.SerializeToXml(xmlWriter, childElement, null);
 			}
 			else if (currentXyzlElementMappingAttribute.ChildElementMode == XyzlChildMode.Content &&
-					(object)currentConfigurationObject.Content != null)
+					(object)currentSolderConfiguration.Content != null)
 			{
 				// anonymous 0..1 child element
-				this.SerializeToXml(xmlWriter, currentConfigurationObject.Content, null);
+				this.SerializeToXml(xmlWriter, currentSolderConfiguration.Content, null);
 			}
 
 			// write the end of the (current) element
@@ -1297,7 +1268,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <typeparam name="TObject"> The target type to unregister. </typeparam>
 		/// <returns> A value indicating if the registration was present. </returns>
 		public bool UnregisterKnownObject<TObject>()
-			where TObject : IConfigurationObject
+			where TObject : ISolderConfiguration
 		{
 			Type targetType;
 
@@ -1320,7 +1291,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			if ((object)targetType == null)
 				throw new ArgumentNullException(nameof(targetType));
 
-			xyzlElementMappingAttribute = this.ReflectionFascade.GetOneAttribute<XyzlElementMappingAttribute>(targetType);
+			xyzlElementMappingAttribute = targetType.GetOneAttribute<XyzlElementMappingAttribute>();
 
 			if ((object)xyzlElementMappingAttribute == null)
 				throw new XyzlException(string.Format("TODO: error message"));
@@ -1343,7 +1314,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		/// <typeparam name="TObject"> The target type to unregister. </typeparam>
 		/// <returns> A value indicating if the registration was present. </returns>
 		public bool UnregisterKnownValueObject<TObject>()
-			where TObject : IXyzlValueObject<string>
+			where TObject : IXyzlValue<string>
 		{
 			Type targetType;
 

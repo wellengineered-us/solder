@@ -23,12 +23,21 @@ namespace WellEngineered.Solder.Injection
 		Scoped,
 
 		/// <summary>
-		/// Singleton lifetime dependencies are created the first time they are requested, and then every subsequent request will use the same instance. If your application requires singleton behavior, allowing the dependency manager to manage the dependency’s lifetime is recommended instead of implementing the singleton design pattern and managing your object’s lifetime in the class yourself.
+		/// Singleton lifetime dependencies are created the first time they are requested,
+		/// and then every subsequent request will use the same instance.
+		/// If your application requires singleton behavior, allowing the dependency manager to manage the dependency’s
+		/// lifetime is recommended instead of implementing the singleton design pattern and managing your object’s
+		/// lifetime in the class yourself.
 		/// </summary>
 		Singleton,
 
 		/// <summary>
-		/// ReflectionFascadeLegacyInstance lifetime dependencies are those for which you can choose to add an instance directly to the dependency manager. If you do so, this instance will be used for all subsequent requests (this technique will create a Singleton-scoped instance). One key difference between ReflectionFascadeLegacyInstance dependencies and Singleton dependencies is that the ReflectionFascadeLegacyInstance dependencies is created in "your code", while the Singleton service is lazy-loaded the first time it is requested.
+		/// ReflectionFascadeLegacyInstance lifetime dependencies are those for which you can choose to add an instance
+		/// directly to the dependency manager. If you do so, this instance will be used for all subsequent requests
+		/// (this technique will create a Singleton-scoped instance). One key difference between
+		/// ReflectionFascadeLegacyInstance dependencies and Singleton dependencies is that the
+		/// ReflectionFascadeLegacyInstance dependencies is created in "your code",
+		/// while the Singleton service is lazy-loaded the first time it is requested.
 		/// </summary>
 		Instance
 	}

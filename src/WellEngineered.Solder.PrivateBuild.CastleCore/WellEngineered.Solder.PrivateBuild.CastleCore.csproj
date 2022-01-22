@@ -10,23 +10,23 @@
 	<Import Project="..\common.props" />
 
 	<ItemGroup>
-	<PackageReference Include="System.Diagnostics.TraceSource" Version="4.3.0" />
-	<PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
-	<PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
-	<PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
-	<PackageReference Include="System.Reflection" Version="4.3.0" />
-	<PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
-	<PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
-	<PackageReference Include="System.ComponentModel" Version="4.3.0" />
-	<PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
+		<PackageReference Include="System.Diagnostics.TraceSource" Version="4.3.0" />
+		<PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+		<PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
+		<PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
+		<PackageReference Include="System.Reflection" Version="4.3.0" />
+		<PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+		<PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
+		<PackageReference Include="System.ComponentModel" Version="4.3.0" />
+		<PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
 	</ItemGroup>
 
 
 
 	<PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
-	<NetStandard13Constants>TRACE;FEATURE_NETCORE_REFLECTION_API;FEATURE_TEST_SERILOGINTEGRATION</NetStandard13Constants>
-	<NetStandard15Constants>$(NetStandard13Constants);FEATURE_CUSTOMMODIFIERS</NetStandard15Constants>
-	<DefineConstants>$(DefineConstants);$(NetStandard15Constants)</DefineConstants>
+		<NetStandard13Constants>TRACE;FEATURE_NETCORE_REFLECTION_API;FEATURE_TEST_SERILOGINTEGRATION</NetStandard13Constants>
+		<NetStandard15Constants>$(NetStandard13Constants);FEATURE_CUSTOMMODIFIERS</NetStandard15Constants>
+		<DefineConstants>$(DefineConstants);$(NetStandard15Constants)</DefineConstants>
 	</PropertyGroup>
 
 </Project>

@@ -21,7 +21,10 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // ***********************************************************************
 
+#nullable enable
+
 using System;
+using System.Linq;
 using System.Reflection;
 using NUnit.Compatibility;
 using NUnit.Framework.Interfaces;
@@ -52,7 +55,7 @@ namespace NUnit.Framework.Internal
         /// <summary>
         /// Gets the base type of this type as an ITypeInfo
         /// </summary>
-        public ITypeInfo BaseType
+        public ITypeInfo? BaseType
         {
             get
             {
@@ -160,7 +163,7 @@ namespace NUnit.Framework.Internal
         /// <summary>
         /// Get the display name for an object of this type, constructed with the specified args.
         /// </summary>
-        public string GetDisplayName(object[] args)
+        public string GetDisplayName(object?[]? args)
         {
             return TypeHelper.GetDisplayName(Type, args);
         }
@@ -228,7 +231,7 @@ namespace NUnit.Framework.Internal
         /// <summary>
         /// Gets the public constructor taking the specified argument Types
         /// </summary>
-        public ConstructorInfo GetConstructor(Type[] argTypes)
+        public ConstructorInfo? GetConstructor(Type[] argTypes)
         {
             return Type.GetConstructor(argTypes);
         }
@@ -244,7 +247,7 @@ namespace NUnit.Framework.Internal
         /// <summary>
         /// Construct an object of this Type, using the specified arguments.
         /// </summary>
-        public object Construct(object[] args)
+        public object Construct(object?[]? args)
         {
             return Reflect.Construct(Type, args);
         }
@@ -255,6 +258,34 @@ namespace NUnit.Framework.Internal
         public override string ToString()
         {
             return Type.ToString();
+        }
+
+        /// <summary>
+        /// Returns all methods declared by this type that have the specified attribute, optionally
+        /// including base classes. Methods from a base class are always returned before methods from a class that
+        /// inherits from it.
+        /// </summary>
+        /// <param name="inherit">Specifies whether to search the fixture type inheritance chain.</param>
+        public IMethodInfo[] GetMethodsWithAttribute<T>(bool inherit) where T : class
+        {
+            if (!inherit)
+            {
+                return Type
+                    .GetMethods(Reflect.AllMembers | BindingFlags.DeclaredOnly)
+                    .Where(method => method.IsDefined(typeof(T), inherit: false))
+                    .Select(method => new MethodWrapper(Type, method))
+                    .ToArray();
+            }
+
+            var methodsByDeclaringType = Type
+                .GetMethods(Reflect.AllMembers | BindingFlags.FlattenHierarchy) // FlattenHierarchy is complex to replicate by looping over base types with DeclaredOnly.
+                .Where(method => method.IsDefined(typeof(T), inherit: true))
+                .ToLookup(method => method.DeclaringType);
+
+            return Type.TypeAndBaseTypes()
+                .Reverse()
+                .SelectMany(declaringType => methodsByDeclaringType[declaringType].Select(method => new MethodWrapper(declaringType, method)))
+                .ToArray();
         }
     }
 }

@@ -8,8 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-using WellEngineered.Solder.Extensions;
-using WellEngineered.Solder.Utilities;
+using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Tokenization
 {
@@ -20,29 +19,21 @@ namespace WellEngineered.Solder.Tokenization
 	/// A missing token is considered invalid and no replacement will be made.
 	/// An unknown token considered invalid and no replacement will be made.
 	/// The minimum length of a token is 1; the maximum length of a token is 1024.
-	/// Tokens are case insensative.
-	/// An token may be proceded by an optional function call operator with zero or more arguments.
+	/// Tokens are case insensitive.
+	/// An token may be proceeded by an optional function call operator with zero or more arguments.
 	/// Each function call argument must be enclosed in tick marks e.g. `some value`.
 	/// Recursion/nested token expressions is not supported.
 	/// </summary>
-	public sealed class Tokenizer : ITokenizer
+	public sealed partial class Tokenizer
+		: ITokenizer
 	{
 		#region Constructors/Destructors
 
-		public Tokenizer(IDataTypeFascade dataTypeFascade, IReflectionFascade reflectionFascade,
-			IDictionary<string, ITokenReplacementStrategy> tokenReplacementStrategies, bool strictMatching)
+		public Tokenizer(IDictionary<string, ITokenReplacement> tokenReplacementStrategies, bool strictMatching)
 		{
-			if ((object)dataTypeFascade == null)
-				throw new ArgumentNullException(nameof(dataTypeFascade));
-
-			if ((object)reflectionFascade == null)
-				throw new ArgumentNullException(nameof(reflectionFascade));
-
 			if ((object)tokenReplacementStrategies == null)
 				throw new ArgumentNullException(nameof(tokenReplacementStrategies));
 
-			this.dataTypeFascade = dataTypeFascade;
-			this.reflectionFascade = reflectionFascade;
 			this.tokenReplacementStrategies = tokenReplacementStrategies;
 			this.strictMatching = strictMatching;
 		}
@@ -61,11 +52,9 @@ namespace WellEngineered.Solder.Tokenization
 			@"(?: [ ]* \( ( [ ]* (?: ` [^`]* ` [ ]* (?: , [ ]* ` [^`]* ` [ ]* )* ){0,1} ){0,1} \) ){0,1}" +
 			@"[ ]* \}";
 
-		private readonly IDataTypeFascade dataTypeFascade;
 		private readonly List<string> previousExpansionTokens = new List<string>();
-		private readonly IReflectionFascade reflectionFascade;
 		private readonly bool strictMatching;
-		private readonly IDictionary<string, ITokenReplacementStrategy> tokenReplacementStrategies;
+		private readonly IDictionary<string, ITokenReplacement> tokenReplacementStrategies;
 
 		#endregion
 
@@ -93,14 +82,6 @@ namespace WellEngineered.Solder.Tokenization
 			}
 		}
 
-		private IDataTypeFascade DataTypeFascade
-		{
-			get
-			{
-				return this.dataTypeFascade;
-			}
-		}
-
 		/// <summary>
 		/// Gets an ordered array of the previous execution of expansion tokens encountered.
 		/// </summary>
@@ -120,14 +101,6 @@ namespace WellEngineered.Solder.Tokenization
 			}
 		}
 
-		private IReflectionFascade ReflectionFascade
-		{
-			get
-			{
-				return this.reflectionFascade;
-			}
-		}
-
 		/// <summary>
 		/// Gets a value indicating if exceptions are thrown for bad token matches.
 		/// </summary>
@@ -142,7 +115,7 @@ namespace WellEngineered.Solder.Tokenization
 		/// <summary>
 		/// Gets a dictionary of token replacement strategies.
 		/// </summary>
-		public IDictionary<string, ITokenReplacementStrategy> TokenReplacementStrategies
+		public IDictionary<string, ITokenReplacement> TokenReplacementStrategies
 		{
 			get
 			{
@@ -161,10 +134,10 @@ namespace WellEngineered.Solder.Tokenization
 		/// <param name="originalValue"> The original unmatched value. </param>
 		/// <param name="matchPoint"> A short description of where the match failure occured. </param>
 		/// <returns> The original value if strict matching semantics are disabled. </returns>
-		private static string GetOriginalValueOrThrowExecption(bool strictMatching, string originalValue, string matchPoint)
+		private static string GetOriginalValueOrThrowException(bool strictMatching, string originalValue, string matchPoint)
 		{
 			if (strictMatching)
-				throw new InvalidOperationException(string.Format("Failed to recognize '{0}' due to '{1}' match error; strict matching enabled.", originalValue, matchPoint));
+				throw new TokenizationException(string.Format("Failed to recognize '{0}' due to '{1}' match error; strict matching enabled.", originalValue, matchPoint));
 			else
 				return originalValue;
 		}
@@ -188,17 +161,17 @@ namespace WellEngineered.Solder.Tokenization
 		/// Replaces a tokenized input string with replacement values. Wildcard support is optional.
 		/// </summary>
 		/// <param name="tokenizedValue"> The input string containing tokenized values. </param>
-		/// <param name="optionalWildcardTokenReplacementStrategy"> An optional wildcard token replacement strategy. </param>
+		/// <param name="optionalWildcardTokenReplacement"> An optional wildcard token replacement strategy. </param>
 		/// <returns> A string value with all possible replacements made. </returns>
-		public string ExpandTokens(string tokenizedValue, IWildcardTokenReplacementStrategy optionalWildcardTokenReplacementStrategy)
+		public string ExpandTokens(string tokenizedValue, ITokenReplacement optionalWildcardTokenReplacement)
 		{
-			if (this.DataTypeFascade.IsNullOrWhiteSpace(tokenizedValue))
+			if (string.IsNullOrWhiteSpace(tokenizedValue))
 				return tokenizedValue;
 
 			// clean token collection
 			this.PreviousExpansionTokens.Clear();
 
-			tokenizedValue = Regex.Replace(tokenizedValue, TokenizerRegEx, (m) => this.ReplacementMatcherEx(m, optionalWildcardTokenReplacementStrategy), RegexOptions.IgnorePatternWhitespace);
+			tokenizedValue = Regex.Replace(tokenizedValue, TokenizerRegEx, (m) => this.ReplacementMatcherEx(m, optionalWildcardTokenReplacement), RegexOptions.IgnorePatternWhitespace);
 
 			return tokenizedValue;
 		}
@@ -212,7 +185,7 @@ namespace WellEngineered.Solder.Tokenization
 		{
 			string[] args;
 
-			if (this.DataTypeFascade.IsNullOrWhiteSpace((call ?? string.Empty).Trim()))
+			if (string.IsNullOrWhiteSpace((call ?? string.Empty).Trim()))
 				return new string[] { };
 
 			// fixup argument list
@@ -233,9 +206,9 @@ namespace WellEngineered.Solder.Tokenization
 		/// Private method used to match and process tokenized regular expressions.
 		/// </summary>
 		/// <param name="match"> The regular express match object. </param>
-		/// <param name="wildcardTokenReplacementStrategy"> The wildcard token replacement strategy to use in the event a predefined token replacement strategy lookup failed. </param>
+		/// <param name="wildcardTokenReplacement"> The wildcard token replacement strategy to use in the event a predefined token replacement strategy lookup failed. </param>
 		/// <returns> The token-resolved string value. </returns>
-		private string ReplacementMatcherEx(Match match, IWildcardTokenReplacementStrategy wildcardTokenReplacementStrategy)
+		private string ReplacementMatcherEx(Match match, ITokenReplacement wildcardTokenReplacement)
 		{
 			// ${ .token.token.token_end (`arg0`, ..) }
 
@@ -243,15 +216,15 @@ namespace WellEngineered.Solder.Tokenization
 			string[] tokens;
 			string[] argumentList = null;
 			object tokenLogicalValue, tokenReplacementValue = null;
-			ITokenReplacementStrategy tokenReplacementStrategy;
+			ITokenReplacement tokenReplacement;
 			bool keyNotFound, tryWildcard;
 
 			rawToken = match.Groups[1].Success ? match.Groups[1].Value : null;
 
 			argumentList = match.Groups[2].Success ? this.GetArgs(match.Groups[2].Value) : null;
 
-			if (this.DataTypeFascade.IsNullOrWhiteSpace(rawToken))
-				return GetOriginalValueOrThrowExecption(this.StrictMatching, match.Value, "token missing");
+			if (string.IsNullOrWhiteSpace(rawToken))
+				return GetOriginalValueOrThrowException(this.StrictMatching, match.Value, "token missing");
 
 			// break any token paths into token list
 			tokens = rawToken.Split(new char[] { TOKENIZER_LOGICAL_PROPERTY_PATH_CHAR }, StringSplitOptions.RemoveEmptyEntries);
@@ -266,37 +239,37 @@ namespace WellEngineered.Solder.Tokenization
 			// add to token collection
 			this.PreviousExpansionTokens.Add(firstToken);
 
-			keyNotFound = !this.TokenReplacementStrategies.TryGetValue(firstToken, out tokenReplacementStrategy);
-			tryWildcard = keyNotFound && (object)wildcardTokenReplacementStrategy != null;
+			keyNotFound = !this.TokenReplacementStrategies.TryGetValue(firstToken, out tokenReplacement);
+			tryWildcard = keyNotFound && (object)wildcardTokenReplacement != null;
 
 			if (keyNotFound && !tryWildcard)
-				return GetOriginalValueOrThrowExecption(this.StrictMatching, match.Value, "token unknown");
+				return GetOriginalValueOrThrowException(this.StrictMatching, match.Value, "token unknown");
 
 			try
 			{
 				if (!tryWildcard)
-					tokenReplacementValue = tokenReplacementStrategy.Evaluate(argumentList);
+					tokenReplacementValue = tokenReplacement.Evaluate(argumentList);
 				else
-					tokenReplacementValue = wildcardTokenReplacementStrategy.Evaluate(firstToken, argumentList);
+					tokenReplacementValue = wildcardTokenReplacement.Evaluate(firstToken, argumentList);
 			}
 			catch (Exception ex)
 			{
-				return GetOriginalValueOrThrowExecption(this.StrictMatching, match.Value, string.Format("function exception {{" + Environment.NewLine + "{0}" + Environment.NewLine + "}}", this.ReflectionFascade.GetErrors(ex, 0)));
+				return GetOriginalValueOrThrowException(this.StrictMatching, match.Value, string.Format("function exception {{" + Environment.NewLine + "{0}" + Environment.NewLine + "}}", ex.GetErrors(0)));
 			}
 
 			if ((object)tokens == null ||
 				tokens.Length <= 0)
-				return tokenReplacementValue.SafeToString();
+				return tokenReplacementValue?.ToString() ?? string.Empty;
 
 			tokenLogicalValue = tokenReplacementValue;
 			foreach (string token in tokens)
 			{
 				// only do logical lookup here
-				if (!this.ReflectionFascade.GetLogicalPropertyValue(tokenLogicalValue, token, out tokenLogicalValue))
-					return GetOriginalValueOrThrowExecption(this.StrictMatching, match.Value, string.Format("logical property expansion failed {{{0}}}", token));
+				if (!tokenLogicalValue.GetLogicalPropertyValue(token, out tokenLogicalValue))
+					return GetOriginalValueOrThrowException(this.StrictMatching, match.Value, string.Format("logical property expansion failed {{{0}}}", token));
 			}
 
-			return tokenLogicalValue.SafeToString();
+			return tokenLogicalValue?.ToString() ?? string.Empty;
 		}
 
 		#endregion

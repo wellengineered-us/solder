@@ -15,7 +15,7 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 	{
 		#region Methods/Operators
 
-		public async override ValueTask<object> DeserializeObjectFromBinaryReaderAsync(BinaryReader binaryReader, Type targetType)
+		public override async ValueTask<object> DeserializeObjectFromBinaryReaderAsync(BinaryReader binaryReader, Type targetType)
 		{
 			object obj;
 
@@ -51,7 +51,7 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 			return obj;
 		}
 
-		public async override ValueTask<object> DeserializeObjectFromStreamAsync(Stream stream, Type targetType)
+		public override async ValueTask<object> DeserializeObjectFromStreamAsync(Stream stream, Type targetType)
 		{
 			object obj;
 
@@ -67,13 +67,13 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 			return obj;
 		}
 
-		public async override ValueTask<object> DeserializeObjectFromTextReaderAsync(TextReader textReader, Type targetType)
+		public override async ValueTask<object> DeserializeObjectFromTextReaderAsync(TextReader textReader, Type targetType)
 		{
 			await Task.FromException(new NotSupportedException());
 			return default;
 		}
 
-		public async override ValueTask SerializeObjectToBinaryWriterAsync(BinaryWriter binaryWriter, Type targetType, object obj)
+		public override async ValueTask SerializeObjectToBinaryWriterAsync(BinaryWriter binaryWriter, Type targetType, object obj)
 		{
 			if ((object)binaryWriter == null)
 				throw new ArgumentNullException(nameof(binaryWriter));
@@ -108,7 +108,7 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 			await this.SerializeObjectToNativeAsync(bsonWriter, targetType, (object)obj);
 		}
 
-		public async override ValueTask SerializeObjectToStreamAsync(Stream stream, Type targetType, object obj)
+		public override async ValueTask SerializeObjectToStreamAsync(Stream stream, Type targetType, object obj)
 		{
 			if ((object)stream == null)
 				throw new ArgumentNullException(nameof(stream));
@@ -123,7 +123,7 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 				await this.SerializeObjectToNativeAsync(bsonWriter, targetType, obj);
 		}
 
-		public async override ValueTask SerializeObjectToTextWriterAsync(TextWriter textWriter, Type targetType, object obj)
+		public override async ValueTask SerializeObjectToTextWriterAsync(TextWriter textWriter, Type targetType, object obj)
 		{
 			await Task.FromException(new NotSupportedException());
 		}

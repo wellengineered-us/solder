@@ -4,7 +4,7 @@
 -->
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>netcoreapp5.0</TargetFramework>
+		<TargetFramework>net6.0</TargetFramework>
 		<OutputType>Exe</OutputType>
 		<GenerateProgramFile>false</GenerateProgramFile>
 	</PropertyGroup>
@@ -15,7 +15,7 @@
 	<Import Project="..\common.props" />
 
 	<ItemGroup>
-		<None Update="appconfig.json">
+		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
@@ -25,7 +25,6 @@
 		<!--<ProjectReference Include="..\WellEngineered.Solder.PrivateBuild.NUnit\WellEngineered.Solder.PrivateBuild.NUnit.csproj" />-->
 		<ProjectReference Include="..\WellEngineered.Solder.Context\WellEngineered.Solder.Context.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Executive\WellEngineered.Solder.Executive.csproj" />
-		<ProjectReference Include="..\WellEngineered.Solder.Extensions\WellEngineered.Solder.Extensions.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Injection\WellEngineered.Solder.Injection.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Interception\WellEngineered.Solder.Interception.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
@@ -35,10 +34,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="nunit" Version="3.12.0" />
-		<PackageReference Include="NUnitLite" Version="3.12.0" />
-		<PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+		<PackageReference Include="nunit" Version="3.13.2" />
+		<PackageReference Include="NUnitLite" Version="3.13.2" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
 	</ItemGroup>
 
 	<PropertyGroup>

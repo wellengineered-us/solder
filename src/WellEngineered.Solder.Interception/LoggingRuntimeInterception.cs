@@ -7,7 +7,8 @@ using System;
 
 namespace WellEngineered.Solder.Interception
 {
-	public class LoggingRuntimeInterception : RuntimeInterception
+	public partial class LoggingRuntimeInterception
+		: RuntimeInterception
 	{
 		#region Constructors/Destructors
 
@@ -19,7 +20,7 @@ namespace WellEngineered.Solder.Interception
 
 		#region Methods/Operators
 
-		protected override void OnAfterInvoke(bool proceedWithInvocation, IRuntimeInvocation runtimeInvocation, ref Exception thrownException)
+		protected override void CoreAfterInvoke(bool proceedWithInvocation, IRuntimeInvocation runtimeInvocation, ref Exception thrownException)
 		{
 			ConsoleColor oldConsoleColor = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Yellow;
@@ -27,7 +28,7 @@ namespace WellEngineered.Solder.Interception
 			Console.ForegroundColor = oldConsoleColor;
 		}
 
-		protected override void OnBeforeInvoke(IRuntimeInvocation runtimeInvocation, out bool proceedWithInvocation)
+		protected override void CoreBeforeInvoke(IRuntimeInvocation runtimeInvocation, out bool proceedWithInvocation)
 		{
 			ConsoleColor oldConsoleColor = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Blue;
@@ -36,14 +37,14 @@ namespace WellEngineered.Solder.Interception
 			proceedWithInvocation = true;
 		}
 
-		protected override void OnMagicalSpellInvoke(IRuntimeInvocation runtimeInvocation)
+		protected override void CoreMagicalSpellInvoke(IRuntimeInvocation runtimeInvocation)
 		{
 			ConsoleColor oldConsoleColor = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Green;
 			Console.WriteLine("magic invoke: {0}", runtimeInvocation.TargetMethod.ToString());
 			Console.ForegroundColor = oldConsoleColor;
 
-			base.OnMagicalSpellInvoke(runtimeInvocation);
+			base.CoreMagicalSpellInvoke(runtimeInvocation);
 		}
 
 		#endregion

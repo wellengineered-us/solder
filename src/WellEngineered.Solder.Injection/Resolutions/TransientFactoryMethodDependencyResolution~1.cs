@@ -4,6 +4,7 @@
 */
 
 using System;
+using System.Threading.Tasks;
 
 namespace WellEngineered.Solder.Injection.Resolutions
 {
@@ -11,15 +12,30 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// A dependency resolution implementation that executes a
 	/// factory method callback each time a dependency resolution occurs.
 	/// </summary>
-	public sealed class TransientFactoryMethodDependencyResolution<TResolution> : DependencyResolution<TResolution>
+	public sealed partial class TransientFactoryMethodDependencyResolution<TResolution> : DependencyResolution<TResolution>
 	{
 		#region Constructors/Destructors
 
+#if ASYNC_ALL_THE_WAY_DOWN
 		/// <summary>
 		/// Initializes a new instance of the TransientFactoryMethodDependencyResolution`1 class.
 		/// </summary>
 		/// <param name="factoryMethod"> The callback method to execute during resolution. </param>
-		public TransientFactoryMethodDependencyResolution(Func<TResolution> factoryMethod)
+		/// <param name="asyncFactoryMethod"> The asynchronous callback method to execute during resolution. </param>
+		public TransientFactoryMethodDependencyResolution(Func<TResolution> factoryMethod, Func<ValueTask<TResolution>> asyncFactoryMethod)
+			: base(DependencyLifetime.Transient)
+		{
+			if ((object)factoryMethod == null)
+				throw new ArgumentNullException(nameof(factoryMethod));
+
+			if ((object)asyncFactoryMethod == null)
+				throw new ArgumentNullException(nameof(asyncFactoryMethod));
+
+			this.factoryMethod = factoryMethod;
+			this.asyncFactoryMethod = asyncFactoryMethod;
+		}
+#else
+		public TransientFactoryMethodDependencyResolution(Func<TResolution> factoryMethod, object unused = null)
 			: base(DependencyLifetime.Transient)
 		{
 			if ((object)factoryMethod == null)
@@ -27,6 +43,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 
 			this.factoryMethod = factoryMethod;
 		}
+#endif
 
 		#endregion
 

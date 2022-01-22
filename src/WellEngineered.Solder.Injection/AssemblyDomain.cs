@@ -7,15 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
+using Nito.AsyncEx;
 
 using WellEngineered.Solder.Injection.Resolutions;
 using WellEngineered.Solder.Primitives;
-using WellEngineered.Solder.Utilities;
+using WellEngineered.Solder.Utilities.AppSettings;
 
 using DependencyMagicMethod = System.Action<WellEngineered.Solder.Injection.IDependencyManager>;
 
@@ -24,7 +21,7 @@ namespace WellEngineered.Solder.Injection
 	/// <summary>
 	/// Serves as a logical run-time boundary for assemblies.
 	/// </summary>
-	public sealed class AssemblyDomain : Lifecycle
+	public sealed partial class AssemblyDomain : DualLifecycle
 	{
 		#region Constructors/Destructors
 
@@ -33,7 +30,7 @@ namespace WellEngineered.Solder.Injection
 		{
 		}
 
-		public AssemblyDomain(AppDomain appDomain)
+		private AssemblyDomain(AppDomain appDomain)
 		{
 			if ((object)appDomain == null)
 				throw new ArgumentNullException(nameof(appDomain));
@@ -51,7 +48,7 @@ namespace WellEngineered.Solder.Injection
 		private readonly AppDomain appDomain;
 		private readonly IDependencyManager dependencyManager = new DependencyManager();
 		private readonly IDictionary<AssemblyName, Assembly> knownAssemblies = new Dictionary<AssemblyName, Assembly>(___.ByValueEquality.AssemblyName);
-		private readonly ReaderWriterLockSlim readerWriterLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+		private readonly AsyncReaderWriterLock readerWriterLockDual = new AsyncReaderWriterLock();
 		private readonly IResourceManager resourceManager = new ResourceManager();
 
 		#endregion
@@ -99,11 +96,11 @@ namespace WellEngineered.Solder.Injection
 			}
 		}
 
-		private ReaderWriterLockSlim ReaderWriterLock
+		private AsyncReaderWriterLock ReaderWriterLock
 		{
 			get
 			{
-				return this.readerWriterLock;
+				return this.readerWriterLockDual;
 			}
 		}
 
@@ -121,45 +118,17 @@ namespace WellEngineered.Solder.Injection
 
 		private static void AddTrustedDependencies(IDependencyManager dependencyManager)
 		{
-			IDataTypeFascade dataTypeFascade;
-			IReflectionFascade reflectionFascade;
-			IConfigurationRoot configurationRoot;
-			IAppConfigFascade appConfigFascade;
-			IAssemblyInformationFascade assemblyInformationFascade;
+			IAppSettingsFacade appSettingsFacade;
+			AssemblyInformation assemblyInformation;
 
 			if ((object)dependencyManager == null)
 				throw new ArgumentNullException(nameof(dependencyManager));
 
-			dataTypeFascade = new DataTypeFascade();
-			reflectionFascade = new ReflectionFascade(dataTypeFascade);
-			configurationRoot = LoadAppConfigFile(APP_CONFIG_FILE_NAME);
-			appConfigFascade = new AppConfigFascade(configurationRoot, dataTypeFascade);
-			assemblyInformationFascade = new AssemblyInformationFascade(reflectionFascade, Assembly.GetEntryAssembly());
+			appSettingsFacade = AppSettingsFacade.Default;
+			assemblyInformation = AssemblyInformation.Default;
 
-			dependencyManager.AddResolution<IConfigurationRoot>(string.Empty, false, new SingletonWrapperDependencyResolution<IConfigurationRoot>(new InstanceDependencyResolution<IConfigurationRoot>(configurationRoot)));
-			dependencyManager.AddResolution<IDataTypeFascade>(string.Empty, false, new SingletonWrapperDependencyResolution<IDataTypeFascade>(new InstanceDependencyResolution<IDataTypeFascade>(dataTypeFascade)));
-			dependencyManager.AddResolution<IReflectionFascade>(string.Empty, false, new SingletonWrapperDependencyResolution<IReflectionFascade>(new InstanceDependencyResolution<IReflectionFascade>(reflectionFascade)));
-			dependencyManager.AddResolution<IAppConfigFascade>(string.Empty, false, new SingletonWrapperDependencyResolution<IAppConfigFascade>(new InstanceDependencyResolution<IAppConfigFascade>(appConfigFascade)));
-			dependencyManager.AddResolution<IAssemblyInformationFascade>(string.Empty, false, new SingletonWrapperDependencyResolution<IAssemblyInformationFascade>(new InstanceDependencyResolution<IAssemblyInformationFascade>(assemblyInformationFascade)));
-		}
-
-		private static IConfigurationRoot LoadAppConfigFile(string appConfigFilePath)
-		{
-			IConfigurationBuilder configurationBuilder;
-			JsonConfigurationSource configurationSource;
-			IConfigurationProvider configurationProvider;
-			IConfigurationRoot configurationRoot;
-
-			if ((object)appConfigFilePath == null)
-				throw new ArgumentNullException(nameof(appConfigFilePath));
-
-			configurationBuilder = new ConfigurationBuilder();
-			configurationSource = new JsonConfigurationSource() { Optional = false, Path = appConfigFilePath };
-			configurationProvider = new JsonConfigurationProvider(configurationSource);
-			configurationBuilder.Add(configurationSource);
-			configurationRoot = configurationBuilder.Build();
-
-			return configurationRoot;
+			dependencyManager.AddResolution<IAppSettingsFacade>(string.Empty, false, new SingletonWrapperDependencyResolution<IAppSettingsFacade>(new InstanceDependencyResolution<IAppSettingsFacade>(appSettingsFacade)));
+			dependencyManager.AddResolution<AssemblyInformation>(string.Empty, false, new SingletonWrapperDependencyResolution<AssemblyInformation>(new InstanceDependencyResolution<AssemblyInformation>(assemblyInformation)));
 		}
 
 		private void AppDomain_AssemblyLoad(object sender, AssemblyLoadEventArgs e)
@@ -184,13 +153,11 @@ namespace WellEngineered.Solder.Injection
 
 			if (!creating)
 				return;
-			
-			this.ResourceManager.Print("Creating assembly domain");
 
-			// cop a reader lock
-			//this.ReaderWriterLock.EnterUpgradeableReadLock();
+			this.ResourceManager.Print(Guid.Empty, "Creating assembly domain");
 
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
 				if (this.IsCreated)
 					throw new DependencyException(string.Format("This instance has already been initialized."));
@@ -198,16 +165,13 @@ namespace WellEngineered.Solder.Injection
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(AssemblyDomain).FullName);
 
-				// cop a writer lock
-				//this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
 				{
 					// add trusted dependencies
 					AddTrustedDependencies(this.DependencyManager);
 
 					// hook app domain events
-					this.AppDomain.ProcessExit += this.AppDomain_ProcessExit;
+					//this.AppDomain.ProcessExit += this.AppDomain_ProcessExit;
 					this.AppDomain.AssemblyLoad += this.AppDomain_AssemblyLoad;
 
 					// probe known assemblies at run-time
@@ -215,16 +179,8 @@ namespace WellEngineered.Solder.Injection
 					this.ScanAssemblies(assemblies);
 
 					// special case here since this class wil execute under multi-threaded scenarios
-					//this.ExplicitSetIsCreated();
+					this.ExplicitSetIsCreated();
 				}
-				finally
-				{
-					//this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				//this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -233,20 +189,15 @@ namespace WellEngineered.Solder.Injection
 			if (!disposing)
 				return;
 
-			this.ResourceManager.Print("Disposing assembly domain");
-			
-			// cop a reader lock
-			//this.ReaderWriterLock.EnterUpgradeableReadLock();
+			this.ResourceManager.Print(Guid.Empty, "Disposing assembly domain");
 
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
 				if (this.IsDisposed)
 					return;
 
-				// cop a writer lock
-				//this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
 				{
 					if ((object)this.DependencyManager != null)
 						this.DependencyManager.Dispose();
@@ -254,35 +205,14 @@ namespace WellEngineered.Solder.Injection
 					if ((object)this.AppDomain != null)
 					{
 						// unhook app domain events
-						this.AppDomain.AssemblyLoad -= this.AppDomain_AssemblyLoad;
+						//this.AppDomain.AssemblyLoad -= this.AppDomain_AssemblyLoad;
 						this.AppDomain.ProcessExit -= this.AppDomain_ProcessExit;
-
-						// DO NOT DISPOSE HERE
-						//this.AppDomain.Dispose();
 					}
-				}
-				finally
-				{
-					// special case here since this class wil execute under multi-threaded scenarios
+
+					// special case here since this class will execute under multi-threaded scenarios
 					//this.ExplicitSetIsDisposed();
-
-					//this.ReaderWriterLock.ExitWriteLock();
 				}
 			}
-			finally
-			{
-				//this.ReaderWriterLock.ExitUpgradeableReadLock();
-			}
-		}
-
-		protected override ValueTask CoreCreateAsync(bool creating)
-		{
-			throw new NotSupportedException();
-		}
-
-		protected override ValueTask CoreDisposeAsync(bool disposing)
-		{
-			throw new NotSupportedException();
 		}
 
 		private void FireDependencyMagicMethods(Type assemblyType)
@@ -290,12 +220,6 @@ namespace WellEngineered.Solder.Injection
 			MethodInfo[] methodInfos;
 			DependencyMagicMethodAttribute dependencyMagicMethodAttribute;
 			DependencyMagicMethod dependencyMagicMethod;
-
-			IReflectionFascade reflectionFascade;
-
-			// dogfooding here ;)
-			//reflectionFascade = new ReflectionFascade(new DataTypeFascade());
-			reflectionFascade = this.DependencyManager.ResolveDependency<IReflectionFascade>(string.Empty, false);
 
 			methodInfos = assemblyType.GetMethods(BindingFlags.Public | BindingFlags.Static);
 
@@ -306,7 +230,7 @@ namespace WellEngineered.Solder.Injection
 			{
 				foreach (MethodInfo methodInfo in methodInfos)
 				{
-					dependencyMagicMethodAttribute = reflectionFascade.GetOneAttribute<DependencyMagicMethodAttribute>(methodInfo);
+					dependencyMagicMethodAttribute = methodInfo.GetOneAttribute<DependencyMagicMethodAttribute>();
 
 					if ((object)dependencyMagicMethodAttribute == null)
 						continue;
@@ -330,7 +254,7 @@ namespace WellEngineered.Solder.Injection
 						continue;
 
 					// notify
-					this.ResourceManager.Print(string.Format("Firing dependency magic method: '{1}::{0}'", methodInfo.Name, methodInfo.DeclaringType.FullName));
+					this.ResourceManager.Print(Guid.Empty, string.Format("Firing dependency magic method: '{1}::{0}'", methodInfo.Name, methodInfo.DeclaringType.FullName));
 
 					// execute (assuming under existing SRWL)
 					dependencyMagicMethod(this.DependencyManager);
@@ -346,9 +270,7 @@ namespace WellEngineered.Solder.Injection
 				throw new ArgumentNullException(nameof(assemblyName));
 
 			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			using (this.ReaderWriterLock.ReaderLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(AssemblyDomain).FullName);
@@ -361,60 +283,6 @@ namespace WellEngineered.Solder.Injection
 
 				return assembly;
 			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
-			}
-		}
-
-		protected override void MaybeInitialize()
-		{
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
-			{
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
-				{
-					base.MaybeInitialize();
-				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
-			}
-		}
-
-		protected override void MaybeTerminate()
-		{
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
-			{
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
-				{
-					base.MaybeTerminate();
-				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
-			}
 		}
 
 		private void OnAssemblyLoaded(Assembly assembly)
@@ -422,21 +290,14 @@ namespace WellEngineered.Solder.Injection
 			if ((object)assembly == null)
 				throw new ArgumentNullException(nameof(assembly));
 
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			// ...
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(AssemblyDomain).FullName);
 
-				// probe implicit dynamically loaded assmblies
+				// probe implicit loaded assemblies
 				if ((object)assembly != null)
 					this.ScanAssembly(assembly);
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -447,7 +308,7 @@ namespace WellEngineered.Solder.Injection
 		}
 
 		/// <summary>
-		/// Private method that will scan all asemblies specified to perform dependency magic.
+		/// Private method that will scan all assemblies specified to perform dependency magic.
 		/// </summary>
 		/// <param name="assemblies"> An enumerable of assemblies to scan for dependency magic methods. </param>
 		private void ScanAssemblies(IEnumerable<Assembly> assemblies)
@@ -476,7 +337,7 @@ namespace WellEngineered.Solder.Injection
 			if (this.KnownAssemblies.ContainsKey(assemblyName))
 				return;
 
-			this.ResourceManager.Print(string.Format("Scanning assembly: '{0}'", assembly.FullName));
+			this.ResourceManager.Print(Guid.Empty, string.Format("Scanning assembly: '{0}'", assembly.FullName));
 
 			// track which ones we have seen - not sure if AN is fully ==...
 			this.KnownAssemblies.Add(assemblyName, assembly);

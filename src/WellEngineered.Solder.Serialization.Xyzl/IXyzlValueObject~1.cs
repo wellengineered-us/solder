@@ -10,7 +10,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 	/// <summary>
 	/// Represents a value-based configuration object and it's "name".
 	/// </summary>
-	public interface IXyzlValueObject<TValue> : IXyzlValueObject
+	public interface IXyzlValue<TValue> : IXyzlValue
 	{
 		#region Properties/Indexers/Events
 

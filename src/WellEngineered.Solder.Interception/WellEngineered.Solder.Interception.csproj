@@ -10,7 +10,7 @@
 	<Import Project="..\common.props" />
 
 	<ItemGroup>
-	  <ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
 	</ItemGroup>
 
 </Project>

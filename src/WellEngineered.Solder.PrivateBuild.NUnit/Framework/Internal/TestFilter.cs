@@ -22,6 +22,7 @@
 // ***********************************************************************
 
 using System;
+using System.Collections.Generic;
 using System.Xml;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal.Filters;
@@ -65,6 +66,24 @@ namespace NUnit.Framework.Internal
         /// <returns>True if the test passes the filter, otherwise false</returns>
         public virtual bool Pass(ITest test)
         {
+            return Pass(test, false);
+        }
+
+        /// <summary>
+        /// Determine if a particular test passes the filter criteria. The default
+        /// implementation checks the test itself, its parents and any descendants.
+        ///
+        /// Derived classes may override this method or any of the Match methods
+        /// to change the behavior of the filter.
+        /// </summary>
+        /// <param name="test">The test to which the filter is applied</param>
+        /// <param name="negated">If set to <see langword="true"/> we are carrying a negation through</param>
+        /// <returns>True if the test passes the filter, otherwise false</returns>
+        public virtual bool Pass(ITest test, bool negated)
+        {
+            if (negated)
+                return !Match(test) && !MatchParent(test);
+
             return Match(test) || MatchParent(test) || MatchDescendant(test);
         }
 
@@ -105,11 +124,15 @@ namespace NUnit.Framework.Internal
         /// <returns>True if at least one descendant matches the filter criteria</returns>
         protected virtual bool MatchDescendant(ITest test)
         {
-            if (test.Tests == null)
+            var tests = test.Tests;
+            if (tests == null)
                 return false;
 
-            foreach (ITest child in test.Tests)
+            // Use for-loop to avoid allocating the enumerator
+            int count = tests.Count;
+            for (var index = 0; index < count; index++)
             {
+                ITest child = tests[index];
                 if (Match(child) || MatchDescendant(child))
                     return true;
             }
@@ -154,16 +177,20 @@ namespace NUnit.Framework.Internal
             {
                 case "filter":
                 case "and":
-                    var andFilter = new AndFilter();
+                    List<TestFilter> childFilters = new List<TestFilter>();
+
                     foreach (var childNode in node.ChildNodes)
-                        andFilter.Add(FromXml(childNode));
-                    return andFilter;
+                        childFilters.Add(FromXml(childNode));
+
+                    return new AndFilter(childFilters.ToArray());
 
                 case "or":
-                    var orFilter = new OrFilter();
+                    List<TestFilter> orChildFilters = new List<TestFilter>();
+
                     foreach (var childNode in node.ChildNodes)
-                        orFilter.Add(FromXml(childNode));
-                    return orFilter;
+                        orChildFilters.Add(FromXml(childNode));
+
+                    return new OrFilter(orChildFilters.ToArray());
 
                 case "not":
                     return new NotFilter(FromXml(node.FirstChild));
@@ -211,7 +238,7 @@ namespace NUnit.Framework.Internal
                 return true;
             }
 
-            public override bool Pass( ITest test )
+            public override bool Pass( ITest test, bool negated )
             {
                 return true;
             }

@@ -5,13 +5,13 @@
 
 using System;
 using System.Reflection;
-using System.Threading.Tasks;
 
 using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Interception
 {
-	public sealed class RuntimeInvocation : Lifecycle, IRuntimeInvocation
+	public sealed partial class RuntimeInvocation
+		: DualLifecycle, IRuntimeInvocation
 	{
 		#region Constructors/Destructors
 
@@ -136,16 +136,6 @@ namespace WellEngineered.Solder.Interception
 		protected override void CoreDispose(bool disposing)
 		{
 			// do nothing
-		}
-
-		protected override ValueTask CoreCreateAsync(bool creating)
-		{
-			throw new NotSupportedException();
-		}
-
-		protected override ValueTask CoreDisposeAsync(bool disposing)
-		{
-			throw new NotSupportedException();
 		}
 
 		#endregion

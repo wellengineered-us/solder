@@ -10,9 +10,10 @@ using WellEngineered.Solder.Primitives;
 namespace WellEngineered.Solder.Injection
 {
 	/// <summary>
-	/// Provides a unified Strategy Pattern for dependency resolution.
+	/// Provides a unified strategy pattern for dependency resolution.
 	/// </summary>
-	public interface IDependencyResolution : ICreatableEx, IDisposableEx
+	public partial interface IDependencyResolution
+		: ILifecycle
 	{
 		#region Properties/Indexers/Events
 
@@ -31,7 +32,7 @@ namespace WellEngineered.Solder.Injection
 		/// <param name="dependencyManager"> The in-effect dependency manager requesting this dependency resolution. </param>
 		/// <param name="resolutionType"> The contextual resolution type for this dependency resolution. </param>
 		/// <param name="selectorKey"> The contextual selector key for this dependency resolution; a non-null, zero or greater length string is required. </param>
-		/// <returns> An instance of an object assignable to the resolution type or an approapriate default value (e.g. null for reference types, logical 'zero' for value types). </returns>
+		/// <returns> An instance of an object assignable to the resolution type or an appropriate default value (e.g. null for reference types, logical 'zero' for value types). </returns>
 		object Resolve(IDependencyManager dependencyManager, Type resolutionType, string selectorKey);
 
 		#endregion

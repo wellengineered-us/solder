@@ -11,7 +11,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// A dependency resolution implementation that executes a public, default constructor
 	/// on the activation type each time a dependency resolution occurs.
 	/// </summary>
-	public class TransientDefaultConstructorDependencyResolution : DependencyResolution
+	public partial class TransientDefaultConstructorDependencyResolution : DependencyResolution
 
 	{
 		#region Constructors/Destructors
@@ -71,6 +71,9 @@ namespace WellEngineered.Solder.Injection.Resolutions
 
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
+
+			if (!resolutionType.IsAssignableFrom(this.activatorType))
+				throw new DependencyException(string.Format("Resolution type '{1}' is not assignable from activator type '{0}'; selector key '{2}'.", this.activatorType.FullName, resolutionType.FullName, selectorKey));
 
 			return Activator.CreateInstance(this.ActivatorType);
 		}

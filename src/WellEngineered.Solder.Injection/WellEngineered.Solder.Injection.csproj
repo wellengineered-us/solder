@@ -11,14 +11,16 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
+		<ProjectReference Include="..\WellEngineered.Solder.PrivateBuild.AsyncEx\WellEngineered.Solder.PrivateBuild.AsyncEx.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Utilities\WellEngineered.Solder.Utilities.csproj" />
 		<ProjectReference Include="..\WellEngineered.Solder.Context\WellEngineered.Solder.Context.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.9" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+		<PackageReference Include="System.Linq.Async" Version="5.1.0" />
 	</ItemGroup>
 
 </Project>

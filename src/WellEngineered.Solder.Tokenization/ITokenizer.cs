@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace WellEngineered.Solder.Tokenization
 {
-	public interface ITokenizer
+	public partial interface ITokenizer
 	{
 		#region Properties/Indexers/Events
 
@@ -30,7 +30,7 @@ namespace WellEngineered.Solder.Tokenization
 		/// <summary>
 		/// Gets a dictionary of token replacement strategies.
 		/// </summary>
-		IDictionary<string, ITokenReplacementStrategy> TokenReplacementStrategies
+		IDictionary<string, ITokenReplacement> TokenReplacementStrategies
 		{
 			get;
 		}
@@ -50,9 +50,9 @@ namespace WellEngineered.Solder.Tokenization
 		/// Replaces a tokenized input string with replacement values. Wildcard support is optional.
 		/// </summary>
 		/// <param name="tokenizedValue"> The input string containing tokenized values. </param>
-		/// <param name="optionalWildcardTokenReplacementStrategy"> An optional wildcard token replacement strategy. </param>
+		/// <param name="optionalWildcardTokenReplacement"> An optional wildcard token replacement strategy. </param>
 		/// <returns> A string value with all possible replacements made. </returns>
-		string ExpandTokens(string tokenizedValue, IWildcardTokenReplacementStrategy optionalWildcardTokenReplacementStrategy);
+		string ExpandTokens(string tokenizedValue, ITokenReplacement optionalWildcardTokenReplacement);
 
 		#endregion
 	}

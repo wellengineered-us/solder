@@ -23,19 +23,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Security;
+using System.Security.Principal;
 using System.Threading;
 using NUnit.Compatibility;
 using NUnit.Framework.Constraints;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal.Execution;
-
-#if !NETSTANDARD1_4
-using System.Security.Principal;
-#endif
 
 #if NET35 || NET40 || NET45
 using System.Runtime.Remoting.Messaging;
@@ -217,6 +215,18 @@ namespace NUnit.Framework.Internal
         public long StartTicks { get; set; }
 
         /// <summary>
+        /// Gets the elapsed time for running the test in seconds
+        /// </summary>
+        public double Duration
+        {
+            get
+            {
+                var tickCount = Stopwatch.GetTimestamp() - StartTicks;
+                return (double)tickCount / Stopwatch.Frequency;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the current test result
         /// </summary>
         public TestResult CurrentResult
@@ -297,13 +307,11 @@ namespace NUnit.Framework.Internal
         /// </summary>
         public Tolerance DefaultFloatingPointTolerance { get; set; }
 
-#if PARALLEL
         /// <summary>
         /// The worker that spawned the context.
         /// For builds without the parallel feature, it is null.
         /// </summary>
         public TestWorker TestWorker {get; internal set;}
-#endif
 
         /// <summary>
         /// Gets the RandomGenerator specific to this Test
@@ -355,11 +363,7 @@ namespace NUnit.Framework.Internal
             set
             {
                 _sandboxedThreadState = _sandboxedThreadState.WithCulture(value);
-#if NETSTANDARD1_4
-                CultureInfo.CurrentCulture = value;
-#else
                 Thread.CurrentThread.CurrentCulture = value;
-#endif
             }
         }
 
@@ -372,15 +376,10 @@ namespace NUnit.Framework.Internal
             set
             {
                 _sandboxedThreadState = _sandboxedThreadState.WithUICulture(value);
-#if NETSTANDARD1_4
-                CultureInfo.CurrentUICulture = value;
-#else
                 Thread.CurrentThread.CurrentUICulture = value;
-#endif
             }
         }
 
-#if !NETSTANDARD1_4
         /// <summary>
         /// Gets or sets the current <see cref="IPrincipal"/> for the Thread.
         /// </summary>
@@ -390,10 +389,9 @@ namespace NUnit.Framework.Internal
             set
             {
                 _sandboxedThreadState = _sandboxedThreadState.WithPrincipal(value);
-                Thread.CurrentPrincipal = value;
+                ThreadUtility.SetCurrentThreadPrincipal(value);
             }
         }
-#endif
 
         /// <summary>
         /// The current head of the ValueFormatter chain, copied from MsgUtils.ValueFormatter
@@ -475,9 +473,7 @@ namespace NUnit.Framework.Internal
             if (context.CurrentTest != null)
                 context.CurrentResult = context.CurrentTest.MakeTestResult();
 
-#if PARALLEL
             context.TestWorker = TestWorker;
-#endif
 
             return context;
         }
@@ -496,7 +492,6 @@ namespace NUnit.Framework.Internal
 
         #region InitializeLifetimeService
 
-#if !NETSTANDARD1_4
         /// <summary>
         /// Obtain lifetime service object
         /// </summary>
@@ -506,7 +501,6 @@ namespace NUnit.Framework.Internal
         {
             return null;
         }
-#endif
 
 #endregion
 
@@ -568,7 +562,7 @@ namespace NUnit.Framework.Internal
             public AdhocContext()
             {
                 var type = GetType();
-                var method = type.GetMethod("AdhocTestMethod", BindingFlags.NonPublic | BindingFlags.Instance);
+                var method = type.GetMethod(nameof(AdhocTestMethod), BindingFlags.NonPublic | BindingFlags.Instance);
 
                 CurrentTest = new TestMethod(new MethodWrapper(type, method));
                 CurrentResult = CurrentTest.MakeTestResult();

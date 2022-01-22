@@ -58,9 +58,9 @@ namespace WellEngineered.Solder.Primitives
 			bool result = false;
 			if ((object)obj != null)
 			{
-				if (obj is ICreatableEx)
+				if (obj is ICreatable)
 				{
-					((ICreatableEx)obj).Create();
+					((ICreatable)obj).Create();
 					result = true;
 				}
 			}

@@ -40,16 +40,12 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 		{
 			Tokenizer tokenizer;
 			MockFactory mockFactory;
-			IDictionary<string, ITokenReplacementStrategy> mockTokenReplacementStrategies;
+			IDictionary<string, ITokenReplacement> mockTokenReplacementStrategies;
 
 			mockFactory = new MockFactory();
-			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacementStrategy>>();
+			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacement>>();
 
-			// TODO - MOCK THIS
-			IDataTypeFascade mockDataTypeFascade = new DataTypeFascade();
-			IReflectionFascade mockReflectionFascade = new ReflectionFascade(mockDataTypeFascade);
-
-			tokenizer = new Tokenizer(mockDataTypeFascade, mockReflectionFascade, mockTokenReplacementStrategies, true);
+			tokenizer = new Tokenizer(mockTokenReplacementStrategies, true);
 
 			Assert.IsNotNull(tokenizer);
 			Assert.IsNotNull(tokenizer.TokenReplacementStrategies);
@@ -63,10 +59,10 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 		{
 			Tokenizer tokenizer;
 			MockFactory mockFactory;
-			IDictionary<string, ITokenReplacementStrategy> mockTokenReplacementStrategies;
-			ITokenReplacementStrategy mockTokenReplacementStrategy;
+			IDictionary<string, ITokenReplacement> mockTokenReplacementStrategies;
+			ITokenReplacement mockTokenReplacement;
 
-			ITokenReplacementStrategy _unusedTokenReplacementStrategy = null;
+			ITokenReplacement unusedTokenReplacement = null;
 			string _unusedString = null;
 			string[] _unusedStrings = null;
 
@@ -75,43 +71,39 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 			string expectedValue;
 
 			mockFactory = new MockFactory();
-			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacementStrategy>>();
-			mockTokenReplacementStrategy = mockFactory.CreateInstance<ITokenReplacementStrategy>();
+			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacement>>();
+			mockTokenReplacement = mockFactory.CreateInstance<ITokenReplacement>();
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myValueSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myValueSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken0"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken0"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken1"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken1"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken2"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", "b" })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken2"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", "b" })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myUnkSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myUnkSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myErrSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myErrSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("a"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("a"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("b"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("b"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("c"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("c"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("d"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("d"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
 
-			// TODO - MOCK THIS
-			IDataTypeFascade mockDataTypeFascade = new DataTypeFascade();
-			IReflectionFascade mockReflectionFascade = new ReflectionFascade(mockDataTypeFascade);
-
-			tokenizer = new Tokenizer(mockDataTypeFascade, mockReflectionFascade, mockTokenReplacementStrategies, false);
+			tokenizer = new Tokenizer(mockTokenReplacementStrategies, false);
 
 			tokenizedValue = string.Empty;
 			expandedValue = tokenizer.ExpandTokens(tokenizedValue);
@@ -169,10 +161,10 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 		{
 			Tokenizer tokenizer;
 			MockFactory mockFactory;
-			IDictionary<string, ITokenReplacementStrategy> mockTokenReplacementStrategies;
-			ITokenReplacementStrategy mockTokenReplacementStrategy;
+			IDictionary<string, ITokenReplacement> mockTokenReplacementStrategies;
+			ITokenReplacement mockTokenReplacement;
 
-			ITokenReplacementStrategy _unusedTokenReplacementStrategy = null;
+			ITokenReplacement unusedTokenReplacement = null;
 			string _unusedString = null;
 			string[] _unusedStrings = null;
 
@@ -182,43 +174,39 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 			Exception capturedException;
 
 			mockFactory = new MockFactory();
-			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacementStrategy>>();
-			mockTokenReplacementStrategy = mockFactory.CreateInstance<ITokenReplacementStrategy>();
+			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacement>>();
+			mockTokenReplacement = mockFactory.CreateInstance<ITokenReplacement>();
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myValueSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myValueSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken0"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken0"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken1"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken1"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken2"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", "b" })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken2"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(new string[] { "a", "b" })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myUnkSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myUnkSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myErrSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myErrSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("a"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("a"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("b"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("b"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("c"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("c"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("d"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacementStrategy), Return.Value(true));
-			Expect.On(mockTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("d"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", mockTokenReplacement), Return.Value(true));
+			Expect.On(mockTokenReplacement).One.Method(x => x.Evaluate(_unusedStrings)).With(new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
 
-			// TODO - MOCK THIS
-			IDataTypeFascade mockDataTypeFascade = new DataTypeFascade();
-			IReflectionFascade mockReflectionFascade = new ReflectionFascade(mockDataTypeFascade);
-
-			tokenizer = new Tokenizer(mockDataTypeFascade, mockReflectionFascade, mockTokenReplacementStrategies, true);
+			tokenizer = new Tokenizer(mockTokenReplacementStrategies, true);
 
 			tokenizedValue = string.Empty;
 			expandedValue = tokenizer.ExpandTokens(tokenizedValue);
@@ -251,24 +239,24 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${myUnkSemanticToken}...";
-			capturedException = Assert.Throws<InvalidOperationException>(delegate
-																		{
-																			expandedValue = tokenizer.ExpandTokens(tokenizedValue);
-																		});
+			capturedException = Assert.Throws<TokenizationException>(delegate
+																	{
+																		expandedValue = tokenizer.ExpandTokens(tokenizedValue);
+																	});
 			Assert.IsNotNull(capturedException);
 
 			tokenizedValue = "...${myErrSemanticToken}...";
-			capturedException = Assert.Throws<InvalidOperationException>(delegate
-																		{
-																			expandedValue = tokenizer.ExpandTokens(tokenizedValue);
-																		});
+			capturedException = Assert.Throws<TokenizationException>(delegate
+																	{
+																		expandedValue = tokenizer.ExpandTokens(tokenizedValue);
+																	});
 			Assert.IsNotNull(capturedException);
 
 			tokenizedValue = "...${a}...${c}...${b}...${d}...";
-			capturedException = Assert.Throws<InvalidOperationException>(delegate
-																		{
-																			expandedValue = tokenizer.ExpandTokens(tokenizedValue);
-																		});
+			capturedException = Assert.Throws<TokenizationException>(delegate
+																	{
+																		expandedValue = tokenizer.ExpandTokens(tokenizedValue);
+																	});
 			Assert.IsNotNull(capturedException);
 
 			Assert.IsNotNull(tokenizer.OrderedPreviousExpansionTokens);
@@ -282,10 +270,10 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 		{
 			Tokenizer tokenizer;
 			MockFactory mockFactory;
-			IDictionary<string, ITokenReplacementStrategy> mockTokenReplacementStrategies;
-			IWildcardTokenReplacementStrategy mockWildcardTokenReplacementStrategy;
+			IDictionary<string, ITokenReplacement> mockTokenReplacementStrategies;
+			ITokenReplacement mockWildcardTokenReplacement;
 
-			ITokenReplacementStrategy _unusedTokenReplacementStrategy = null;
+			ITokenReplacement unusedTokenReplacement = null;
 			string _unusedString = null;
 			string[] _unusedStrings = null;
 
@@ -294,81 +282,77 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 			string expectedValue;
 
 			mockFactory = new MockFactory();
-			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacementStrategy>>();
-			mockWildcardTokenReplacementStrategy = mockFactory.CreateInstance<IWildcardTokenReplacementStrategy>();
+			mockTokenReplacementStrategies = mockFactory.CreateInstance<IDictionary<string, ITokenReplacement>>();
+			mockWildcardTokenReplacement = mockFactory.CreateInstance<ITokenReplacement>();
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myValueSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myValueSemanticToken"), new EqualMatcher(null)).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myValueSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myValueSemanticToken"), new EqualMatcher(null)).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken0"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myFunctionSemanticToken0"), new EqualMatcher(new string[] { })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken0"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myFunctionSemanticToken0"), new EqualMatcher(new string[] { })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken1"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myFunctionSemanticToken1"), new EqualMatcher(new string[] { "a", })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken1"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myFunctionSemanticToken1"), new EqualMatcher(new string[] { "a", })).WillReturn("testValue");
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myFunctionSemanticToken2"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myFunctionSemanticToken2"), new EqualMatcher(new string[] { "a", "b" })).WillReturn("testValue");
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myFunctionSemanticToken2"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myFunctionSemanticToken2"), new EqualMatcher(new string[] { "a", "b" })).WillReturn("testValue");
 
-			//Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myUnkSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			//Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myUnkSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("myErrSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myErrSemanticToken"), new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("myErrSemanticToken"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("myErrSemanticToken"), new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("a"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("a"), new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("a"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("a"), new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("b"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("b"), new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("b"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("b"), new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("c"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("c"), new EqualMatcher(null)).WillReturn(string.Empty);
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("c"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("c"), new EqualMatcher(null)).WillReturn(string.Empty);
 
-			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out _unusedTokenReplacementStrategy)).With(new EqualMatcher("d"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
-			Expect.On(mockWildcardTokenReplacementStrategy).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("d"), new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
+			Expect.On(mockTokenReplacementStrategies).One.Method(x => x.TryGetValue(_unusedString, out unusedTokenReplacement)).With(new EqualMatcher("d"), new AndMatcher(new ArgumentsMatcher.OutMatcher(), new AlwaysMatcher(true, string.Empty))).Will(new SetNamedParameterAction("value", null), Return.Value(false));
+			Expect.On(mockWildcardTokenReplacement).One.Method(x => x.Evaluate(_unusedString, _unusedStrings)).With(new EqualMatcher("d"), new EqualMatcher(null)).Will(Throw.Exception(new Exception()));
 
-			// TODO - MOCK THIS
-			IDataTypeFascade mockDataTypeFascade = new DataTypeFascade();
-			IReflectionFascade mockReflectionFascade = new ReflectionFascade(mockDataTypeFascade);
-
-			tokenizer = new Tokenizer(mockDataTypeFascade, mockReflectionFascade, mockTokenReplacementStrategies, false);
+			tokenizer = new Tokenizer(mockTokenReplacementStrategies, false);
 
 			tokenizedValue = string.Empty;
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = string.Empty;
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...{myNoSemanticToken}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "...{myNoSemanticToken}...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${myValueSemanticToken}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "...testValue...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${myFunctionSemanticToken0()}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "...testValue...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${myFunctionSemanticToken1(`a`)}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "...testValue...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${myFunctionSemanticToken2(`a`,  `b`)}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "...testValue...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${myErrSemanticToken}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "...${myErrSemanticToken}...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
 			tokenizedValue = "...${a}...${c}...${b}...${d}...";
-			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacementStrategy);
+			expandedValue = tokenizer.ExpandTokens(tokenizedValue, mockWildcardTokenReplacement);
 			expectedValue = "............${d}...";
 			Assert.AreEqual(expectedValue, expandedValue);
 
@@ -384,16 +368,12 @@ namespace WellEngineered.Solder.UnitTests.Cli.Tokenization._
 		{
 			Tokenizer tokenizer;
 			MockFactory mockFactory;
-			IDictionary<string, ITokenReplacementStrategy> mockTokenReplacementStrategies;
+			IDictionary<string, ITokenReplacement> mockTokenReplacementStrategies;
 
 			mockFactory = new MockFactory();
 			mockTokenReplacementStrategies = null;
 
-			// TODO - MOCK THIS
-			IDataTypeFascade mockDataTypeFascade = new DataTypeFascade();
-			IReflectionFascade mockReflectionFascade = new ReflectionFascade(mockDataTypeFascade);
-
-			tokenizer = new Tokenizer(mockDataTypeFascade, mockReflectionFascade, mockTokenReplacementStrategies, true);
+			tokenizer = new Tokenizer(mockTokenReplacementStrategies, true);
 
 			mockFactory.VerifyAllExpectationsHaveBeenMet();
 		}

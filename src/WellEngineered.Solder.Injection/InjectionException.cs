@@ -5,12 +5,14 @@
 
 using System;
 
+using WellEngineered.Solder.Primitives;
+
 namespace WellEngineered.Solder.Injection
 {
 	/// <summary>
 	/// The exception thrown when a specific injection error occurs.
 	/// </summary>
-	public abstract class InjectionException : Exception
+	public abstract class InjectionException : SolderException
 	{
 		#region Constructors/Destructors
 

@@ -11,7 +11,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// A dependency resolution implementation that executes a public, default constructor
 	/// on the activation type each time a dependency resolution occurs.
 	/// </summary>
-	public class TransientDefaultConstructorDependencyResolution<TResolution> : DependencyResolution<TResolution>
+	public partial class TransientDefaultConstructorDependencyResolution<TResolution> : DependencyResolution<TResolution>
 		where TResolution : new()
 	{
 		#region Constructors/Destructors

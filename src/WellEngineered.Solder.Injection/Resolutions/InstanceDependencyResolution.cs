@@ -7,7 +7,8 @@ using System;
 
 namespace WellEngineered.Solder.Injection.Resolutions
 {
-	public sealed class InstanceDependencyResolution : DependencyResolution
+	public sealed partial class InstanceDependencyResolution
+		: DependencyResolution
 	{
 		#region Constructors/Destructors
 

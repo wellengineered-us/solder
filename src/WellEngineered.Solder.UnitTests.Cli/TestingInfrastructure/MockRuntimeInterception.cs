@@ -63,7 +63,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.TestingInfrastructure
 
 		#region Methods/Operators
 
-		protected override void OnInvoke(IRuntimeInvocation runtimeInvocation, IRuntimeContext runtimeContext)
+		protected override void CoreInvoke(IRuntimeInvocation runtimeInvocation, IRuntimeContext runtimeContext)
 		{
 			this.LastOperationName = string.Format("{0}::{1}", (object)runtimeInvocation.TargetType == null ? "<null>" : runtimeInvocation.TargetType.Name, (object)runtimeInvocation.TargetMethod == null ? "<null>" : runtimeInvocation.TargetMethod.Name);
 

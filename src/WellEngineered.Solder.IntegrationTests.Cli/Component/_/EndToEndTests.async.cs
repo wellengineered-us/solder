@@ -3,12 +3,15 @@
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
+#if ASYNC_ALL_THE_WAY_DOWN
 using System;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
 
 using WellEngineered.Solder.Component;
+using WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs;
+using WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs.Configuration;
 
 namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 {
@@ -18,101 +21,140 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 		#region Methods/Operators
 
 		[Test]
-		public async ValueTask ShouldCreateTest2Async()
+		public async ValueTask ShouldCreateTestAsync()
 		{
-			await using (IComponent component = new StubComponent())
+			await using (ISolderComponent0 solderComponent = new DogFoodComponent0())
 			{
-				await component.CreateAsync();
-
-				//stubComponent.DisposeAsync();
+				await solderComponent.CreateAsync();
 			}
 
-			await using (IConfigurableComponent component = new StubConfigurableComponent())
+			await using (ISolderComponent1 solderComponent = new DogFoodComponent1())
 			{
-				component.Configuration = new StubComponentConfiguration();
-				await component.CreateAsync();
+				var configuration = new DogFoodConfiguration();
 
-				//stubComponent.DisposeAsync();
+				solderComponent.Configuration = configuration;
+				await solderComponent.CreateAsync();
+
+				configuration = solderComponent.Configuration as DogFoodConfiguration;
+
+				Assert.IsNotNull(configuration);
 			}
 
-			await using (ISpecifiableConfigurableComponent component = new StubSpecifiableConfigurableComponent())
+			await using (ISolderComponent2 solderComponent = new DogFoodComponent2())
 			{
-				var that = new UnknownComponentConfigurationObject();
+				var that = new UnknownEndToEndConfiguration();
 
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropA), "test");
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropB), 100);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropC), true);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropD), 10.50);
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
 
-				component.Configuration = new UnknownComponentConfigurationObject<StubComponentSpecification>(that);
-				await component.CreateAsync();
+				var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
+				solderComponent.Configuration = configuration;
+				await solderComponent.CreateAsync();
 
-				//Assert.AreSame(component.Configuration.ComponentSpecificConfiguration, component.Specification);
+				configuration = solderComponent.Configuration as UnknownEndToEndConfiguration<DogFoodSpecification>;
 
-				dynamic dynSpecification = component.Specification;
-				dynamic dynConfig = component.Configuration;
-				dynamic dynComponentSpecificConfiguration = dynConfig.ComponentSpecificConfiguration;
+				Assert.IsNotNull(configuration);
+
+				Assert.AreEqual("test", configuration.Specification.PropA);
+				Assert.AreEqual(100, configuration.Specification.PropB);
+				Assert.AreEqual(true, configuration.Specification.PropC);
+				Assert.AreEqual(10.50, configuration.Specification.PropD);
+
+				var specification = solderComponent.Specification as DogFoodSpecification;
+
+				Assert.IsNotNull(specification);
+
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
+			}
+			
+			await using (ISolderComponent2 solderComponent = new DogFoodComponent2())
+			{
+				var that = new UnknownEndToEndConfiguration();
+
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
+
+				var configuration = that;
+				solderComponent.Configuration = configuration;
+				await solderComponent.CreateAsync();
+
+				dynamic dynSpecification = solderComponent.Specification;
+
+				Assert.IsNotNull(dynSpecification);
 
 				Assert.AreEqual("test", dynSpecification.PropA);
 				Assert.AreEqual(100, dynSpecification.PropB);
 				Assert.AreEqual(true, dynSpecification.PropC);
 				Assert.AreEqual(10.50, dynSpecification.PropD);
 
-				Assert.AreEqual("test", dynComponentSpecificConfiguration.PropA);
-				Assert.AreEqual(100, dynComponentSpecificConfiguration.PropB);
-				Assert.AreEqual(true, dynComponentSpecificConfiguration.PropC);
-				Assert.AreEqual(10.50, dynComponentSpecificConfiguration.PropD);
+				var specification = solderComponent.Specification as DogFoodSpecification;
 
-				//stubComponent.DisposeAsync();
-			}
-		}
+				Assert.IsNotNull(specification);
 
-		[Test]
-		public async ValueTask ShouldCreateTestAsync()
-		{
-			await using (IComponent component = new StubComponent())
-			{
-				await component.CreateAsync();
-
-				//stubComponent.DisposeAsync();
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
 			}
 
-			await using (IConfigurableComponent<StubComponentConfiguration> component = new StubConfigurableComponent())
+			await using (ISolderComponent<DogFoodConfiguration> solderComponent = new DogFoodComponentTick1())
 			{
-				component.Configuration = new StubComponentConfiguration();
-				await component.CreateAsync();
+				var configuration = new DogFoodConfiguration();
 
-				//stubComponent.DisposeAsync();
+				configuration.Prop1 = "test";
+				configuration.Prop2 = 100;
+				configuration.Prop3 = true;
+				configuration.Prop4 = 10.50;
+
+				solderComponent.Configuration = configuration;
+				await solderComponent.CreateAsync();
+
+				configuration = solderComponent.Configuration as DogFoodConfiguration;
+
+				Assert.IsNotNull(configuration);
+
+				Assert.AreEqual("test", configuration.Prop1);
+				Assert.AreEqual(100, configuration.Prop2);
+				Assert.AreEqual(true, configuration.Prop3);
+				Assert.AreEqual(10.50, configuration.Prop4);
 			}
 
-			await using (ISpecifiableConfigurableComponent<UnknownComponentConfigurationObject<StubComponentSpecification>, StubComponentSpecification> component = new StubSpecifiableConfigurableComponent())
+			await using (ISolderComponent<UnknownEndToEndConfiguration<DogFoodSpecification>, DogFoodSpecification> solderComponent = new DogFoodComponentTick2())
 			{
-				var that = new UnknownComponentConfigurationObject();
+				var that = new UnknownEndToEndConfiguration();
 
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropA), "test");
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropB), 100);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropC), true);
-				that.ComponentSpecificConfiguration.Add(nameof(StubComponentSpecification.PropD), 10.50);
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
 
-				component.Configuration = new UnknownComponentConfigurationObject<StubComponentSpecification>(that);
-				await component.CreateAsync();
+				var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
+				solderComponent.Configuration = configuration;
+				await solderComponent.CreateAsync();
 
-				//Assert.AreSame(component.Configuration.ComponentSpecificConfiguration, component.Specification);
+				configuration = solderComponent.Configuration as UnknownEndToEndConfiguration<DogFoodSpecification>;
 
-				Assert.AreEqual("test", component.Specification.PropA);
-				Assert.AreEqual(100, component.Specification.PropB);
-				Assert.AreEqual(true, component.Specification.PropC);
-				Assert.AreEqual(10.50, component.Specification.PropD);
+				Assert.IsNotNull(configuration);
 
-				Assert.AreEqual("test", component.Configuration.ComponentSpecificConfiguration.PropA);
-				Assert.AreEqual(100, component.Configuration.ComponentSpecificConfiguration.PropB);
-				Assert.AreEqual(true, component.Configuration.ComponentSpecificConfiguration.PropC);
-				Assert.AreEqual(10.50, component.Configuration.ComponentSpecificConfiguration.PropD);
+				var specification = solderComponent.Specification as DogFoodSpecification;
 
-				//stubComponent.DisposeAsync();
+				Assert.IsNotNull(specification);
+
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
 			}
 		}
 
 		#endregion
 	}
 }
+#endif

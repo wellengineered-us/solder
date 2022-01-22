@@ -5,11 +5,11 @@
 
 namespace WellEngineered.Solder.Serialization.Xyzl
 {
-	public abstract class XyzlValueObject<TValue> : XyzlObject, IXyzlValueObject<TValue>
+	public abstract class XyzlValue<TValue> : XyzlModel, IXyzlValue<TValue>
 	{
 		#region Constructors/Destructors
 
-		protected XyzlValueObject()
+		protected XyzlValue()
 		{
 		}
 
@@ -35,7 +35,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 			}
 		}
 
-		object IXyzlValueObject.Value
+		object IXyzlValue.Value
 		{
 			get
 			{

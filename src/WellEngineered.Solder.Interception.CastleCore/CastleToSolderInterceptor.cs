@@ -52,8 +52,7 @@ namespace WellEngineered.Solder.Interception.CastleCore
 			if ((object)invocation == null)
 				throw new ArgumentNullException(nameof(invocation));
 
-			runtimeContext = new RuntimeContext();
-			runtimeContext.ContinueInterception = true;
+			runtimeContext = new RuntimeContext(true);
 
 			runtimeInvocation = new RuntimeInvocation(invocation.Proxy, /*invocation.TargetType*/ invocation.Method.DeclaringType, invocation.Method, invocation.Arguments, invocation.InvocationTarget);
 

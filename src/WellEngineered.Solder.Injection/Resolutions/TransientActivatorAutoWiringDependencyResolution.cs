@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-using WellEngineered.Solder.Utilities;
+using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Injection.Resolutions
 {
@@ -16,20 +16,16 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// on the activation type each time a dependency resolution occurs and is the only
 	/// implementation that allows for auto-wiring using the DependencyInjectionAttribute.
 	/// </summary>
-	public sealed class TransientActivatorAutoWiringDependencyResolution : DependencyResolution
+	public sealed partial class TransientActivatorAutoWiringDependencyResolution : DependencyResolution
 	{
 		#region Constructors/Destructors
 
-		public TransientActivatorAutoWiringDependencyResolution(IReflectionFascade reflectionFascade, Type activatorType)
+		public TransientActivatorAutoWiringDependencyResolution(Type activatorType)
 			: base(DependencyLifetime.Transient)
 		{
-			if ((object)reflectionFascade == null)
-				throw new ArgumentNullException(nameof(reflectionFascade));
-
 			if ((object)activatorType == null)
 				throw new ArgumentNullException(nameof(activatorType));
 
-			this.reflectionFascade = reflectionFascade;
 			this.activatorType = activatorType;
 		}
 
@@ -38,7 +34,6 @@ namespace WellEngineered.Solder.Injection.Resolutions
 		#region Fields/Constants
 
 		private readonly Type activatorType;
-		private readonly IReflectionFascade reflectionFascade;
 
 		#endregion
 
@@ -52,31 +47,13 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			}
 		}
 
-		private IReflectionFascade ReflectionFascade
-		{
-			get
-			{
-				return this.reflectionFascade;
-			}
-		}
-
 		#endregion
 
 		#region Methods/Operators
-		
-		public static TransientActivatorAutoWiringDependencyResolution From(IDependencyManager dependencyManager, Type activatorType)
-		{
-			if ((object)dependencyManager == null)
-				throw new ArgumentNullException(nameof(dependencyManager));
-			
-			if ((object)activatorType == null)
-				throw new ArgumentNullException(nameof(activatorType));
 
-			return new TransientActivatorAutoWiringDependencyResolution(dependencyManager.ResolveDependency<IReflectionFascade>(string.Empty, false), activatorType);
-		}
-
-		internal static TResolution AutoWireResolve<TResolution>(IReflectionFascade reflectionFascade, Type activatorType, IDependencyManager dependencyManager, Type resolutionType, string selectorKey)
+		internal static TResolution AutoWireResolve<TResolution>(Type activatorType, IDependencyManager dependencyManager, string selectorKey)
 		{
+			Type resolutionType;
 			ConstructorInfo constructorInfo;
 			ConstructorInfo[] constructorInfos;
 			ParameterInfo[] parameterInfos;
@@ -84,26 +61,19 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			DependencyInjectionAttribute dependencyInjectionAttribute;
 			Lazy<TResolution> lazyConstructorInvokation = null;
 
-			if ((object)reflectionFascade == null)
-				throw new ArgumentNullException(nameof(reflectionFascade));
-
 			if ((object)activatorType == null)
 				throw new ArgumentNullException(nameof(activatorType));
 
 			if ((object)dependencyManager == null)
 				throw new ArgumentNullException(nameof(dependencyManager));
 
-			if ((object)resolutionType == null)
-				throw new ArgumentNullException(nameof(resolutionType));
-
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
 
-			TypeInfo _activatorTypeInfo = activatorType.GetTypeInfo();
+			resolutionType = typeof(TResolution);
 
-			// TODO
-			//if (!resolutionType.IsAssignableFrom(activatorType))
-				//;
+			if (!resolutionType.IsAssignableFrom(activatorType))
+				throw new DependencyException(string.Format("Resolution type '{1}' is not assignable from activator type '{0}'; selector key '{2}'.", activatorType.FullName, resolutionType.FullName, selectorKey));
 
 			// get public, instance .ctors for activation type
 			constructorInfos = activatorType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
@@ -117,7 +87,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 					constructorInfo = constructorInfos[constructorIndex];
 
 					// on constructor
-					dependencyInjectionAttribute = reflectionFascade.GetOneAttribute<DependencyInjectionAttribute>(constructorInfo);
+					dependencyInjectionAttribute = constructorInfo.GetOneAttribute<DependencyInjectionAttribute>();
 
 					if ((object)dependencyInjectionAttribute == null)
 						continue;
@@ -142,7 +112,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 						parameterType = parameterInfo.ParameterType;
 
 						// on parameter
-						parameterDependencyInjectionAttribute = reflectionFascade.GetOneAttribute<DependencyInjectionAttribute>(parameterInfo);
+						parameterDependencyInjectionAttribute = parameterInfo.GetOneAttribute<DependencyInjectionAttribute>();
 
 						if ((object)parameterDependencyInjectionAttribute == null)
 							throw new DependencyException(string.Format("A constructor for activator type '{0}' specifying the '{1}' with selector key '{2}' had at least one parameter missing the '{1}': index='{3}';name='{4}';type='{5}'.", activatorType.FullName, nameof(DependencyInjectionAttribute), selectorKey, parameterIndex, parameterInfo.Name, parameterInfo.ParameterType.FullName));
@@ -153,6 +123,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 																		IDependencyManager _dependencyManager = dependencyManager;
 																		Type _resolutionType = parameterType;
 																		DependencyInjectionAttribute _parameterDependencyInjectionAttribute = parameterDependencyInjectionAttribute;
+
 																		return _dependencyManager.ResolveDependency(_resolutionType, _parameterDependencyInjectionAttribute.SelectorKey, true);
 																	});
 
@@ -164,6 +135,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 																		// prevent modified closure bug
 																		Type _activatorType = activatorType;
 																		Lazy<object>[] _lazyConstructorArguments = lazyConstructorArguments;
+
 																		return (TResolution)Activator.CreateInstance(_activatorType, _lazyConstructorArguments.Select(l => l.Value).ToArray());
 																	});
 				}
@@ -172,7 +144,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			if ((object)lazyConstructorInvokation == null)
 				throw new DependencyException(string.Format("Cannot find a dependency injection constructor for activator type '{0}' with selector key '{1}'.", activatorType.FullName, selectorKey));
 
-			return lazyConstructorInvokation.Value; // lazy loads a cascading chain of Lazy's...
+			return lazyConstructorInvokation.Value; // .Value will load a cascading chain of Lazy's...
 		}
 
 		protected override void CoreCreate(bool creating)
@@ -196,7 +168,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
 
-			return AutoWireResolve<object>(this.ReflectionFascade, this.ActivatorType, dependencyManager, resolutionType, selectorKey);
+			return AutoWireResolve<object>(this.ActivatorType, dependencyManager, selectorKey);
 		}
 
 		#endregion

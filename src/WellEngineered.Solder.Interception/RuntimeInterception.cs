@@ -4,7 +4,6 @@
 */
 
 using System;
-using System.Threading.Tasks;
 
 using WellEngineered.Solder.Primitives;
 
@@ -13,7 +12,8 @@ namespace WellEngineered.Solder.Interception
 	/// <summary>
 	/// Represents a dynamic run-time interception.
 	/// </summary>
-	public abstract class RuntimeInterception : Lifecycle, IRuntimeInterception
+	public abstract partial class RuntimeInterception
+		: DualLifecycle, IRuntimeInterception
 	{
 		#region Constructors/Destructors
 
@@ -28,6 +28,17 @@ namespace WellEngineered.Solder.Interception
 
 		#region Methods/Operators
 
+		protected virtual void CoreAfterInvoke(bool proceedWithInvocation, IRuntimeInvocation runtimeInvocation, ref Exception thrownException)
+		{
+			if ((object)runtimeInvocation == null)
+				throw new ArgumentNullException(nameof(runtimeInvocation));
+		}
+
+		protected virtual void CoreBeforeInvoke(IRuntimeInvocation runtimeInvocation, out bool proceedWithInvocation)
+		{
+			proceedWithInvocation = true;
+		}
+
 		protected override void CoreCreate(bool creating)
 		{
 			// do nothing
@@ -38,44 +49,7 @@ namespace WellEngineered.Solder.Interception
 			// do nothing
 		}
 
-		protected sealed override ValueTask CoreCreateAsync(bool creating)
-		{
-			throw new NotSupportedException();
-		}
-
-		protected sealed override ValueTask CoreDisposeAsync(bool disposing)
-		{
-			throw new NotSupportedException();
-		}
-
-		/// <summary>
-		/// Represents a discrete run-time invocation.
-		/// </summary>
-		/// <param name="runtimeInvocation"> </param>
-		/// <param name="runtimeContext"> </param>
-		public void Invoke(IRuntimeInvocation runtimeInvocation, IRuntimeContext runtimeContext)
-		{
-			if ((object)runtimeInvocation == null)
-				throw new ArgumentNullException(nameof(runtimeInvocation));
-
-			if ((object)runtimeInvocation == null)
-				throw new ArgumentNullException(nameof(runtimeContext));
-
-			this.OnInvoke(runtimeInvocation, runtimeContext);
-		}
-
-		protected virtual void OnAfterInvoke(bool proceedWithInvocation, IRuntimeInvocation runtimeInvocation, ref Exception thrownException)
-		{
-			if ((object)runtimeInvocation == null)
-				throw new ArgumentNullException(nameof(runtimeInvocation));
-		}
-
-		protected virtual void OnBeforeInvoke(IRuntimeInvocation runtimeInvocation, out bool proceedWithInvocation)
-		{
-			proceedWithInvocation = true;
-		}
-
-		protected virtual void OnInvoke(IRuntimeInvocation runtimeInvocation, IRuntimeContext runtimeContext)
+		protected virtual void CoreInvoke(IRuntimeInvocation runtimeInvocation, IRuntimeContext runtimeContext)
 		{
 			Exception thrownException = null;
 			bool proceedWithInvocation;
@@ -91,12 +65,12 @@ namespace WellEngineered.Solder.Interception
 				this.IsDisposed) // always forward dispose invocations
 				throw new ObjectDisposedException(typeof(RuntimeInterception).FullName);
 
-			this.OnBeforeInvoke(runtimeInvocation, out proceedWithInvocation);
+			this.CoreBeforeInvoke(runtimeInvocation, out proceedWithInvocation);
 
 			if (proceedWithInvocation)
-				this.OnProceedInvoke(runtimeInvocation, out thrownException);
+				this.CoreProceedInvoke(runtimeInvocation, out thrownException);
 
-			this.OnAfterInvoke(proceedWithInvocation, runtimeInvocation, ref thrownException);
+			this.CoreAfterInvoke(proceedWithInvocation, runtimeInvocation, ref thrownException);
 
 			if ((object)thrownException != null)
 			{
@@ -105,13 +79,13 @@ namespace WellEngineered.Solder.Interception
 			}
 		}
 
-		protected virtual void OnMagicalSpellInvoke(IRuntimeInvocation runtimeInvocation)
+		protected virtual void CoreMagicalSpellInvoke(IRuntimeInvocation runtimeInvocation)
 		{
 			if ((object)runtimeInvocation.WrappedInstance != null)
 				runtimeInvocation.InvocationReturnValue = runtimeInvocation.TargetMethod.Invoke(runtimeInvocation.WrappedInstance, runtimeInvocation.InvocationArguments);
 		}
 
-		protected virtual void OnProceedInvoke(IRuntimeInvocation runtimeInvocation, out Exception thrownException)
+		protected virtual void CoreProceedInvoke(IRuntimeInvocation runtimeInvocation, out Exception thrownException)
 		{
 			if ((object)runtimeInvocation == null)
 				throw new ArgumentNullException(nameof(runtimeInvocation));
@@ -120,11 +94,34 @@ namespace WellEngineered.Solder.Interception
 			{
 				thrownException = null;
 
-				this.OnMagicalSpellInvoke(runtimeInvocation);
+				this.CoreMagicalSpellInvoke(runtimeInvocation);
 			}
 			catch (Exception ex)
 			{
 				thrownException = ex;
+			}
+		}
+
+		/// <summary>
+		/// Represents a discrete run-time invocation.
+		/// </summary>
+		/// <param name="runtimeInvocation"> </param>
+		/// <param name="runtimeContext"> </param>
+		public void Invoke(IRuntimeInvocation runtimeInvocation, IRuntimeContext runtimeContext)
+		{
+			if ((object)runtimeInvocation == null)
+				throw new ArgumentNullException(nameof(runtimeInvocation));
+
+			if ((object)runtimeInvocation == null)
+				throw new ArgumentNullException(nameof(runtimeContext));
+
+			try
+			{
+				this.CoreInvoke(runtimeInvocation, runtimeContext);
+			}
+			catch (Exception ex)
+			{
+				throw new InterceptionException(string.Format("The runtime invocation failed (see inner exception)."), ex);
 			}
 		}
 

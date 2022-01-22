@@ -5,12 +5,14 @@
 
 using System;
 
+using WellEngineered.Solder.Primitives;
+
 namespace WellEngineered.Solder.Interception
 {
 	/// <summary>
 	/// The exception thrown when a specific interception error occurs.
 	/// </summary>
-	public abstract class InterceptionException : Exception
+	public class InterceptionException : SolderException
 	{
 		#region Constructors/Destructors
 

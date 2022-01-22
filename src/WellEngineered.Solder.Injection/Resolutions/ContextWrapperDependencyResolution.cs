@@ -16,7 +16,8 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// retrieved from the inner dependency resolution once per the lifetime of the specified context scope.
 	/// NOTE: no explicit synchronization is assumed.
 	/// </summary>
-	public sealed class ContextWrapperDependencyResolution : DependencyResolution
+	public sealed partial class ContextWrapperDependencyResolution
+		: DependencyResolution
 	{
 		#region Constructors/Destructors
 

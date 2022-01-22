@@ -4,7 +4,8 @@
 */
 
 using System;
-using System.Threading;
+
+using Nito.AsyncEx;
 
 namespace WellEngineered.Solder.Injection.Resolutions
 {
@@ -14,7 +15,8 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// retrieved from the inner dependency resolution once per the lifetime of this dependency resolution instance.
 	/// Uses reader-writer lock for asynchronous protection (i.e. thread-safety).
 	/// </summary>
-	public sealed class SingletonWrapperDependencyResolution : DependencyResolution
+	public sealed partial class SingletonWrapperDependencyResolution
+		: DependencyResolution
 	{
 		#region Constructors/Destructors
 
@@ -37,7 +39,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 		#region Fields/Constants
 
 		private readonly IDependencyResolution innerDependencyResolution;
-		private readonly ReaderWriterLockSlim readerWriterLock = new ReaderWriterLockSlim();
+		private readonly AsyncReaderWriterLock readerWriterLockDual = new AsyncReaderWriterLock();
 		private bool frozen;
 		private object instance;
 
@@ -53,11 +55,11 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			}
 		}
 
-		private ReaderWriterLockSlim ReaderWriterLock
+		private AsyncReaderWriterLock ReaderWriterLock
 		{
 			get
 			{
-				return this.readerWriterLock;
+				return this.readerWriterLockDual;
 			}
 		}
 
@@ -118,31 +120,17 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
 
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
-				if (this.Frozen)
-					return this.Instance;
-
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
+				if (!this.Frozen)
 				{
 					this.Instance = this.InnerDependencyResolution.Resolve(dependencyManager, resolutionType, selectorKey);
-					return this.Instance;
-				}
-				finally
-				{
 					this.Frozen = true;
-					this.ReaderWriterLock.ExitWriteLock();
 				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
+
+				return this.Instance;
 			}
 		}
 

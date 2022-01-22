@@ -4,6 +4,7 @@
 */
 
 using System;
+using System.Threading.Tasks;
 
 using NMock;
 
@@ -34,6 +35,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			int result;
 			MockFactory mockFactory;
 
@@ -41,8 +43,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = mockFactory.CreateInstance<IDependencyManager>();
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			Assert.AreEqual(DependencyLifetime.Transient, transientFactoryMethodDependencyResolution.DependencyLifetime);
 
@@ -62,6 +65,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			object result;
 			MockFactory mockFactory;
 
@@ -69,8 +73,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = mockFactory.CreateInstance<IDependencyManager>();
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			Assert.AreEqual(DependencyLifetime.Transient, transientFactoryMethodDependencyResolution.DependencyLifetime);
 
@@ -91,6 +96,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			int result;
 			MockFactory mockFactory;
 
@@ -98,8 +104,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = null;
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			result = transientFactoryMethodDependencyResolution.Resolve(mockDependencyManager, string.Empty);
 		}
@@ -111,6 +118,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			object result;
 			MockFactory mockFactory;
 
@@ -118,8 +126,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = null;
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			result = transientFactoryMethodDependencyResolution.Resolve(mockDependencyManager, typeof(int), string.Empty);
 		}
@@ -130,10 +139,26 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 		{
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 
 			value = null;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
+		}
+		
+		[Test]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void ShouldFailOnNullFactoryMethodCreateAsyncTest()
+		{
+			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
+			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
+
+			value = () => 11;
+			asyncValue = null;
+
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 		}
 
 		[Test]
@@ -143,6 +168,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			int result;
 			MockFactory mockFactory;
 
@@ -150,8 +176,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = mockFactory.CreateInstance<IDependencyManager>();
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			result = transientFactoryMethodDependencyResolution.Resolve(mockDependencyManager, null);
 		}
@@ -163,6 +190,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			object result;
 			MockFactory mockFactory;
 
@@ -170,8 +198,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = mockFactory.CreateInstance<IDependencyManager>();
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			result = transientFactoryMethodDependencyResolution.Resolve(mockDependencyManager, typeof(int), null);
 		}
@@ -183,6 +212,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
 			IDependencyManager mockDependencyManager;
 			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
 			object result;
 			MockFactory mockFactory;
 
@@ -190,8 +220,9 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			mockDependencyManager = mockFactory.CreateInstance<IDependencyManager>();
 
 			value = () => 11;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value);
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 
 			result = transientFactoryMethodDependencyResolution.Resolve(mockDependencyManager, null, string.Empty);
 		}

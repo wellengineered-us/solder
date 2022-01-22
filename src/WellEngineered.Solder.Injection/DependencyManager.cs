@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
+using Nito.AsyncEx;
 
 using WellEngineered.Solder.Primitives;
 
@@ -17,7 +17,7 @@ namespace WellEngineered.Solder.Injection
 	/// Provides dependency registration and resolution services.
 	/// Uses reader-writer lock for asynchronous protection (i.e. thread-safety).
 	/// </summary>
-	public sealed class DependencyManager : Lifecycle, IDependencyManager
+	public sealed partial class DependencyManager : DualLifecycle, IDependencyManager
 	{
 		#region Constructors/Destructors
 
@@ -33,7 +33,7 @@ namespace WellEngineered.Solder.Injection
 		#region Fields/Constants
 
 		private readonly IDictionary<Tuple<Type, string>, IDependencyResolution> dependencyResolutionRegistrations = new Dictionary<Tuple<Type, string>, IDependencyResolution>();
-		private readonly ReaderWriterLockSlim readerWriterLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+		private readonly AsyncReaderWriterLock readerWriterLockDual = new AsyncReaderWriterLock();
 
 		#endregion
 
@@ -47,11 +47,11 @@ namespace WellEngineered.Solder.Injection
 			}
 		}
 
-		private ReaderWriterLockSlim ReaderWriterLock
+		private AsyncReaderWriterLock ReaderWriterLock
 		{
 			get
 			{
-				return this.readerWriterLock;
+				return this.readerWriterLockDual;
 			}
 		}
 
@@ -102,18 +102,13 @@ namespace WellEngineered.Solder.Injection
 			if ((object)dependencyResolution == null)
 				throw new ArgumentNullException(nameof(dependencyResolution));
 
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
 
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
 				{
 					trait = new Tuple<Type, string>(resolutionType, selectorKey);
 					candidateResolutions = this.GetCandidateResolutionsMustReadLock(resolutionType, selectorKey, includeAssignableTypes);
@@ -123,14 +118,6 @@ namespace WellEngineered.Solder.Injection
 
 					this.DependencyResolutionRegistrations.Add(trait, dependencyResolution);
 				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -142,30 +129,17 @@ namespace WellEngineered.Solder.Injection
 		{
 			bool result;
 
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
 
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
 				{
 					result = this.FreeDependencyResolutionsMustReadLock();
 					return result;
 				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -198,18 +172,13 @@ namespace WellEngineered.Solder.Injection
 			if ((object)resolutionType == null)
 				throw new ArgumentNullException(nameof(resolutionType));
 
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
 
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
 				{
 					// force execution to prevent 'System.InvalidOperationException : Collection was modified; enumeration operation may not execute.'
 					candidateResolutions = this.GetCandidateResolutionsMustReadLock(resolutionType, null, includeAssignableTypes).ToArray();
@@ -226,14 +195,6 @@ namespace WellEngineered.Solder.Injection
 
 					return count > 0;
 				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -274,16 +235,6 @@ namespace WellEngineered.Solder.Injection
 					//this.ReaderWriterLock.ExitUpgradeableReadLock();
 				}
 			}
-		}
-
-		protected override ValueTask CoreCreateAsync(bool creating)
-		{
-			return default;
-		}
-
-		protected override ValueTask CoreDisposeAsync(bool disposing)
-		{
-			return default;
 		}
 
 		private bool FreeDependencyResolutionsMustReadLock()
@@ -336,7 +287,10 @@ namespace WellEngineered.Solder.Injection
 			candidateResolutions = this.GetCandidateResolutionsMustReadLock(resolutionType, selectorKey, includeAssignableTypes);
 
 			// first attempt direct resolution: exact type and selector key
-			dependencyResolution = candidateResolutions.OrderBy(drr => drr.Key == trait).Select(drr => drr.Value).FirstOrDefault();
+			dependencyResolution = candidateResolutions
+				.OrderBy(drr => drr.Key == trait)
+				.Select(drr => drr.Value)
+				.FirstOrDefault();
 
 			return dependencyResolution;
 		}
@@ -380,9 +334,7 @@ namespace WellEngineered.Solder.Injection
 			//throw new ArgumentNullException(nameof(selectorKey));
 
 			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			using (this.ReaderWriterLock.ReaderLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
@@ -390,60 +342,6 @@ namespace WellEngineered.Solder.Injection
 				dependencyResolution = this.GetDependencyResolutionMustReadLock(resolutionType, selectorKey, includeAssignableTypes);
 
 				return (object)dependencyResolution != null;
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
-			}
-		}
-
-		protected override void MaybeInitialize()
-		{
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
-			{
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
-				{
-					base.MaybeInitialize();
-				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
-			}
-		}
-
-		protected override void MaybeTerminate()
-		{
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
-			{
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
-				{
-					base.MaybeTerminate();
-				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -482,18 +380,13 @@ namespace WellEngineered.Solder.Injection
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
 
-			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			// cop a writer lock
+			using (this.ReaderWriterLock.WriterLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
 
-				// cop a writer lock
-				this.ReaderWriterLock.EnterWriteLock();
-
-				try
+				// ...
 				{
 					trait = new Tuple<Type, string>(resolutionType, selectorKey);
 					dependencyResolution = this.GetDependencyResolutionMustReadLock(resolutionType, selectorKey, includeAssignableTypes);
@@ -504,14 +397,6 @@ namespace WellEngineered.Solder.Injection
 					dependencyResolution.Dispose();
 					this.DependencyResolutionRegistrations.Remove(trait);
 				}
-				finally
-				{
-					this.ReaderWriterLock.ExitWriteLock();
-				}
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -521,7 +406,7 @@ namespace WellEngineered.Solder.Injection
 		/// <typeparam name="TResolution"> The resolution type of resolution. </typeparam>
 		/// <param name="selectorKey"> An non-null, zero or greater length string selector key. </param>
 		/// <param name="includeAssignableTypes"> A boolean value indicating whether to include assignable types in the candidate resolution lookup list. </param>
-		/// <returns> An object instance of assisgnable to the resolution type. </returns>
+		/// <returns> An object instance of assignable to the resolution type. </returns>
 		public TResolution ResolveDependency<TResolution>(string selectorKey, bool includeAssignableTypes)
 		{
 			Type resolutionType;
@@ -543,7 +428,7 @@ namespace WellEngineered.Solder.Injection
 		/// <param name="resolutionType"> The resolution type of resolution. </param>
 		/// <param name="selectorKey"> An non-null, zero or greater length string selector key. </param>
 		/// <param name="includeAssignableTypes"> A boolean value indicating whether to include assignable types in the candidate resolution lookup list. </param>
-		/// <returns> An object instance of assisgnable to the resolution type. </returns>
+		/// <returns> An object instance of assignable to the resolution type. </returns>
 		public object ResolveDependency(Type resolutionType, string selectorKey, bool includeAssignableTypes)
 		{
 			object value;
@@ -557,9 +442,7 @@ namespace WellEngineered.Solder.Injection
 				throw new ArgumentNullException(nameof(selectorKey));
 
 			// cop a reader lock
-			this.ReaderWriterLock.EnterUpgradeableReadLock();
-
-			try
+			using (this.ReaderWriterLock.ReaderLock())
 			{
 				if (this.IsDisposed)
 					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
@@ -580,10 +463,6 @@ namespace WellEngineered.Solder.Injection
 				}
 
 				return value;
-			}
-			finally
-			{
-				this.ReaderWriterLock.ExitUpgradeableReadLock();
 			}
 		}
 

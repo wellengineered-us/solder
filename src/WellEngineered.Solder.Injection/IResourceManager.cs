@@ -10,15 +10,10 @@ using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Injection
 {
-	public partial interface IResourceManager : ICreatableEx, IDisposableEx
+	public partial interface IResourceManager
+		: ILifecycle
 	{
 		#region Methods/Operators
-
-		/*TException NewExceptionWithCallerInfo<TException>(Func<string, TException> factory,
-			[CallerFilePath] string callerFilePath = null,
-			[CallerLineNumber] int? callerLineNumber = null,
-			[CallerMemberName] string callerMemberName = null)
-			where TException : Exception, new();*/
 
 		void Check([CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);
 
@@ -30,11 +25,12 @@ namespace WellEngineered.Solder.Injection
 
 		void Leave(Guid? slotId, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);
 
-		void Print(string message, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);
+		void Print(Guid? slotId, string message, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);
 
 		void Reset();
 
-		IDisposable Using(Guid? slotId, IDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);
+		IDisposableDispatch<TDisposable> Using<TDisposable>(Guid? slotId, TDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+			where TDisposable : IDisposable;
 
 		void Watching(Guid? slotId, IDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);
 

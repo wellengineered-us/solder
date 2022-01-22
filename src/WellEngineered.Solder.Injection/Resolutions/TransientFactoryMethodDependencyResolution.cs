@@ -11,7 +11,7 @@ namespace WellEngineered.Solder.Injection.Resolutions
 	/// A dependency resolution implementation that executes a
 	/// factory method callback each time a dependency resolution occurs.
 	/// </summary>
-	public sealed class TransientFactoryMethodDependencyResolution : DependencyResolution
+	public sealed partial class TransientFactoryMethodDependencyResolution : DependencyResolution
 	{
 		#region Constructors/Destructors
 
@@ -62,6 +62,8 @@ namespace WellEngineered.Solder.Injection.Resolutions
 
 		protected override object CoreResolve(IDependencyManager dependencyManager, Type resolutionType, string selectorKey)
 		{
+			Type activatorType;
+
 			if ((object)dependencyManager == null)
 				throw new ArgumentNullException(nameof(dependencyManager));
 
@@ -70,8 +72,10 @@ namespace WellEngineered.Solder.Injection.Resolutions
 
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
-			
-			// TODO: this.FactoryMethod.Method.GetParameters()
+
+			activatorType = this.FactoryMethod.Method.ReturnType;
+			if (!resolutionType.IsAssignableFrom(activatorType))
+				throw new DependencyException(string.Format("Resolution type '{1}' is not assignable from activator type '{0}'; selector key '{2}'.", activatorType.FullName, resolutionType.FullName, selectorKey));
 
 			return this.FactoryMethod.DynamicInvoke(null);
 		}

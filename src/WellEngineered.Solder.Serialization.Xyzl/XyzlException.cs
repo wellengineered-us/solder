@@ -5,12 +5,14 @@
 
 using System;
 
+using WellEngineered.Solder.Primitives;
+
 namespace WellEngineered.Solder.Serialization.Xyzl
 {
 	/// <summary>
 	/// The exception thrown when a specific invocation error occurs.
 	/// </summary>
-	public sealed class XyzlException : Exception
+	public sealed class XyzlException : SolderException
 	{
 		#region Constructors/Destructors
 

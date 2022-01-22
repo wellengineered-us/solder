@@ -3,12 +3,15 @@
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
+#if ASYNC_ALL_THE_WAY_DOWN
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
 
 using WellEngineered.Solder.Injection;
+using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 {
@@ -25,10 +28,10 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 				Guid? __ = await resourceManager.EnterAsync();
 				IAsyncDisposable asyncDisposable;
 
-				asyncDisposable = new MockLifecycle();
+				asyncDisposable = new MockDualLifecycle();
 				await resourceManager.WatchingAsync(__, asyncDisposable);
 
-				asyncDisposable = new MockLifecycle();
+				asyncDisposable = new MockDualLifecycle();
 				//resourceManager.UsingAsync(__, disposable);
 				await using (await resourceManager.UsingAsync(__, asyncDisposable))
 				{
@@ -41,5 +44,32 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 		}
 
 		#endregion
+
+		internal partial class MockDualLifecycle
+			: DualLifecycle
+		{
+			#region Methods/Operators
+
+			protected override ValueTask CoreCreateAsync(bool creating, CancellationToken cancellationToken = default)
+			{
+				return default;
+			}
+
+			protected override ValueTask CoreDisposeAsync(bool disposing, CancellationToken cancellationToken = default)
+			{
+				return default;
+			}
+
+			protected override void CoreCreate(bool creating)
+			{
+			}
+
+			protected override void CoreDispose(bool disposing)
+			{
+			}
+
+			#endregion
+		}
 	}
 }
+#endif

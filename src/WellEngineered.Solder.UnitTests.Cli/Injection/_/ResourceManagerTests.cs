@@ -4,6 +4,7 @@
 */
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
@@ -34,10 +35,10 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 				Guid? __ = resourceManager.Enter();
 				IDisposable disposable;
 
-				disposable = new MockLifecycle();
+				disposable = new MockDualLifecycle();
 				resourceManager.Watching(__, disposable);
 
-				disposable = new MockLifecycle();
+				disposable = new MockDualLifecycle();
 				//resourceManager.Using(__, disposable);
 				using (resourceManager.Using(__, disposable))
 				{
@@ -52,28 +53,31 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 		#endregion
 	}
 
-	internal class MockLifecycle : Lifecycle
+	internal partial class MockDualLifecycle
+		: DualLifecycle
 	{
 		#region Methods/Operators
+#if ASYNC_ALL_THE_WAY_DOWN
+		
+protected override ValueTask CoreCreateAsync(bool creating, CancellationToken cancellationToken = default)
+		{
+			return default;
+		}
 
+		protected override ValueTask CoreDisposeAsync(bool disposing, CancellationToken cancellationToken = default)
+		{
+			return default;
+		}
+		
+#endif
 		protected override void CoreCreate(bool creating)
 		{
 		}
-
-		protected override ValueTask CoreCreateAsync(bool creating)
-		{
-			return default;
-		}
-
+		
 		protected override void CoreDispose(bool disposing)
 		{
 		}
-
-		protected override ValueTask CoreDisposeAsync(bool disposing)
-		{
-			return default;
-		}
-
+		
 		#endregion
 	}
 }

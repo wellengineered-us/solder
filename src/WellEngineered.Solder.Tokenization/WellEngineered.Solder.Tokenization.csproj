@@ -6,12 +6,11 @@
 	<Import Project="..\common.props" />
 
 	<ItemGroup>
-	  <ProjectReference Include="..\WellEngineered.Solder.Extensions\WellEngineered.Solder.Extensions.csproj" />
-	  <ProjectReference Include="..\WellEngineered.Solder.Utilities\WellEngineered.Solder.Utilities.csproj" />
+		<PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
+		<ProjectReference Include="..\WellEngineered.Solder.Primitives\WellEngineered.Solder.Primitives.csproj" />
 	</ItemGroup>
 
 </Project>
