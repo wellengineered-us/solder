@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -57,9 +57,20 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 		: DualLifecycle
 	{
 		#region Methods/Operators
+
+		protected override void CoreCreate(bool creating)
+		{
+		}
+
+		protected override void CoreDispose(bool disposing)
+		{
+		}
+
+		#endregion
+
 #if ASYNC_ALL_THE_WAY_DOWN
-		
-protected override ValueTask CoreCreateAsync(bool creating, CancellationToken cancellationToken = default)
+
+		protected override ValueTask CoreCreateAsync(bool creating, CancellationToken cancellationToken = default)
 		{
 			return default;
 		}
@@ -68,16 +79,7 @@ protected override ValueTask CoreCreateAsync(bool creating, CancellationToken ca
 		{
 			return default;
 		}
-		
+
 #endif
-		protected override void CoreCreate(bool creating)
-		{
-		}
-		
-		protected override void CoreDispose(bool disposing)
-		{
-		}
-		
-		#endregion
 	}
 }

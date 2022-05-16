@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -50,6 +50,8 @@ namespace WellEngineered.Solder.Injection.Resolutions
 		#endregion
 
 		#region Methods/Operators
+
+		// this needs to be moved into container so a Resolve does this always.
 
 		internal static TResolution AutoWireResolve<TResolution>(Type activatorType, IDependencyManager dependencyManager, string selectorKey)
 		{

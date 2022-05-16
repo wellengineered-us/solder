@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -10,6 +10,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Newtonsoft.Json.Linq;
+
+using WellEngineered.Solder.Configuration;
 using WellEngineered.Solder.Primitives;
 
 using ISolderComponent = WellEngineered.Solder.Component.ISolderComponent2;
@@ -18,7 +21,44 @@ namespace WellEngineered.Solder.Component
 {
 	public abstract partial class UnknownSolderConfiguration
 	{
+		#region Properties/Indexers/Events
+
+		public ISolderSpecification AsyncUntypedSolderComponentSpecification
+		{
+			get
+			{
+				this.CoreApplyUntypedSpecificationAsync().GetAwaiter().GetResult(); // special case
+				return this.untypedSolderSpecification;
+			}
+			set
+			{
+				this.EnsureParentOnPropertySet(this.untypedSolderSpecification, value);
+				this.untypedSolderSpecification = value;
+			}
+		}
+
+		#endregion
+
 		#region Methods/Operators
+
+		protected virtual ValueTask CoreApplyUntypedSpecificationAsync()
+		{
+			return this.CoreApplyUntypedSpecificationAsync(this.SpecificationType);
+		}
+
+		protected virtual async ValueTask CoreApplyUntypedSpecificationAsync(Type specificationType)
+		{
+			if ((object)specificationType == null)
+				throw new ArgumentNullException(nameof(specificationType));
+
+			if ((object)this.Specification != null)
+			{
+				this.UntypedSolderComponentSpecification = (ISolderSpecification)
+					JObject.FromObject(this.Specification).ToObject(specificationType);
+
+				await Task.CompletedTask;
+			}
+		}
 
 		protected override async IAsyncEnumerable<IMessage> CoreValidateAsync(object context, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
@@ -58,7 +98,7 @@ namespace WellEngineered.Solder.Component
 
 								// "Hey Component, tell me what your Specification type is?"
 								specificationType = solderComponent.SpecificationType;
-								this.ApplyUntypedSpecification(specificationType);
+								await this.CoreApplyUntypedSpecificationAsync(specificationType);
 
 								//messages = this.UntypedComponentSpecification.Validate(componentContext);
 								messages = solderComponent.Specification.ValidateAsync(componentContext, cancellationToken);

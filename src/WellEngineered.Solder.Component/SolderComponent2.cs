@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -71,24 +71,24 @@ namespace WellEngineered.Solder.Component
 
 		protected override void CoreCreate(bool creating)
 		{
-			ISolderConfiguration untypedSolderConfiguration;
-			IUnknownSolderConfiguration<ISolderSpecification> typedSolderConfiguration;
+			IUnknownSolderConfiguration untypedUnknownSolderConfiguration;
+			IUnknownSolderConfiguration<ISolderSpecification> typedUnknownSolderConfiguration;
 
 			if (creating)
 			{
 				base.CoreCreate(creating);
 
-				untypedSolderConfiguration = this.Configuration; // assuming a cast to subtype
+				untypedUnknownSolderConfiguration = this.Configuration;
 
-				typedSolderConfiguration = this.CoreCreateTypedUnknownConfiguration();
+				typedUnknownSolderConfiguration = this.CoreCreateTypedUnknownConfiguration(untypedUnknownSolderConfiguration);
 
-				this.Specification = typedSolderConfiguration.Specification;
+				this.Specification = typedUnknownSolderConfiguration.Specification;
 
 				this.AssertValidSpecification();
 			}
 		}
 
-		protected abstract IUnknownSolderConfiguration<ISolderSpecification> CoreCreateTypedUnknownConfiguration();
+		protected abstract IUnknownSolderConfiguration<ISolderSpecification> CoreCreateTypedUnknownConfiguration(IUnknownSolderConfiguration untypedUnknownSolderConfiguration);
 
 		protected override void CoreDispose(bool disposing)
 		{

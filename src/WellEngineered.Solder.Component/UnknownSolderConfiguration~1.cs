@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -12,10 +12,10 @@ using WellEngineered.Solder.Configuration;
 
 namespace WellEngineered.Solder.Component
 {
-	public abstract partial class UnknownSolderConfiguration<TComponentSpecification>
+	public abstract partial class UnknownSolderConfiguration<TSolderConfiguration>
 		: UnknownSolderConfiguration,
-			IUnknownSolderConfiguration<TComponentSpecification>
-		where TComponentSpecification : class, ISolderSpecification, new()
+			IUnknownSolderConfiguration<TSolderConfiguration>
+		where TSolderConfiguration : class, ISolderSpecification, new()
 	{
 		#region Constructors/Destructors
 
@@ -25,7 +25,7 @@ namespace WellEngineered.Solder.Component
 		}
 
 		protected UnknownSolderConfiguration(IDictionary<string, object> untypedSpecification, IUnknownSolderConfiguration that)
-			: base(untypedSpecification, typeof(TComponentSpecification))
+			: base(untypedSpecification, typeof(TSolderConfiguration))
 		{
 			if ((object)untypedSpecification == null)
 				throw new ArgumentNullException(nameof(untypedSpecification));
@@ -49,17 +49,17 @@ namespace WellEngineered.Solder.Component
 
 		#region Fields/Constants
 
-		private TComponentSpecification specification;
+		private TSolderConfiguration specification;
 
 		#endregion
 
 		#region Properties/Indexers/Events
 
-		public new TComponentSpecification Specification
+		public new TSolderConfiguration Specification
 		{
 			get
 			{
-				this.ApplyTypedSpecification(); // special case
+				this.CoreApplyTypedSpecification(); // special case
 				return this.specification;
 			}
 			set
@@ -73,13 +73,13 @@ namespace WellEngineered.Solder.Component
 
 		#region Methods/Operators
 
-		private void ApplyTypedSpecification()
+		protected virtual void CoreApplyTypedSpecification()
 		{
 			if ((object)base.Specification != null) // MUST BE base.Prop here or SOE throws
 			{
 				this.UntypedSolderComponentSpecification =
 					this.Specification =
-						JObject.FromObject(base.Specification).ToObject<TComponentSpecification>();
+						JObject.FromObject(base.Specification).ToObject<TSolderConfiguration>();
 			}
 		}
 

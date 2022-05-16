@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -9,12 +9,14 @@ using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Injection
 {
-	internal sealed class UsingBlockProxy
-		: Lifecycle
+	internal sealed class UsingBlockProxy<TDisposable>
+		: Lifecycle,
+			IDisposableDispatch<TDisposable>
+		where TDisposable : IDisposable
 	{
 		#region Constructors/Destructors
 
-		public UsingBlockProxy(IResourceManager resourceManager, Guid? slotId, IDisposable disposable)
+		public UsingBlockProxy(IResourceManager resourceManager, Guid? slotId, TDisposable target)
 		{
 			if ((object)resourceManager == null)
 				throw new ArgumentNullException(nameof(resourceManager));
@@ -22,33 +24,26 @@ namespace WellEngineered.Solder.Injection
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
 
-			if ((object)disposable == null)
-				throw new ArgumentNullException(nameof(disposable));
+			if ((object)target == null)
+				throw new ArgumentNullException(nameof(target));
 
 			this.resourceManager = resourceManager;
 			this.slotId = slotId;
-			this.disposable = disposable;
+			this.target = target;
 		}
 
 		#endregion
 
 		#region Fields/Constants
 
-		private readonly IDisposable disposable;
 		private readonly IResourceManager resourceManager;
 		private readonly Guid? slotId;
+
+		private readonly TDisposable target;
 
 		#endregion
 
 		#region Properties/Indexers/Events
-
-		private IDisposable Disposable
-		{
-			get
-			{
-				return this.disposable;
-			}
-		}
 
 		private IResourceManager ResourceManager
 		{
@@ -66,6 +61,14 @@ namespace WellEngineered.Solder.Injection
 			}
 		}
 
+		public TDisposable Target
+		{
+			get
+			{
+				return this.target;
+			}
+		}
+
 		#endregion
 
 		#region Methods/Operators
@@ -77,10 +80,10 @@ namespace WellEngineered.Solder.Injection
 
 		protected override void CoreDispose(bool disposing)
 		{
-			if ((object)this.Disposable != null)
+			if ((object)this.Target != null)
 			{
-				this.Disposable.Dispose();
-				this.ResourceManager.Dispose(this.SlotId, this.Disposable);
+				this.Target.Dispose();
+				this.ResourceManager.Dispose(this.SlotId, this.Target);
 			}
 		}
 

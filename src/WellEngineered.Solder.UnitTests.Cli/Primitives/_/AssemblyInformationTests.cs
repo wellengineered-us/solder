@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -11,7 +11,6 @@ using NMock;
 using NUnit.Framework;
 
 using WellEngineered.Solder.Primitives;
-using WellEngineered.Solder.UnitTests.Cli.TestingInfrastructure;
 
 namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 {
@@ -74,7 +73,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 			AssemblyInformation assemblyInformation;
 
 			assemblyInformation = new AssemblyInformation(null, null, null, null, null, null, null, null, null, null, null);
-			
+
 			Assert.IsNull(assemblyInformation.Company);
 			Assert.IsNull(assemblyInformation.Configuration);
 			Assert.IsNull(assemblyInformation.Copyright);

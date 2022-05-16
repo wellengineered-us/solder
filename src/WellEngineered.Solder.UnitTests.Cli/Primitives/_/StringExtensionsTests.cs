@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -30,15 +30,13 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 
 		#region Methods/Operators
 
-		
-
 		[Test]
 		[ExpectedException(typeof(ArgumentOutOfRangeException))]
 		public void ShouldFailOnInvalidGenericTypeTryParseTest()
 		{
 			KeyValuePair<int, int> ovalue;
 			bool result;
-			
+
 			result = string.Empty.TryParse<KeyValuePair<int, int>>(out ovalue);
 		}
 
@@ -67,7 +65,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 		{
 			Boolean ovalue;
 			bool result;
-			
+
 			result = "true".TryParse<Boolean>(out ovalue);
 			Assert.IsTrue(result);
 			Assert.AreEqual(true, ovalue);
@@ -480,18 +478,6 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 		}
 
 		[Test]
-		public void ShouldToStringExTest()
-		{
-			Assert.AreEqual("123.456", 123.456.ToStringEx());
-			Assert.AreEqual("123.46", 123.456.ToStringEx("n"));
-			Assert.AreEqual("urn:foo", new Uri("urn:foo").ToStringEx("n"));
-
-			Assert.AreEqual(string.Empty, ((object)null).ToStringEx(null));
-			Assert.AreEqual(string.Empty, ((object)null).ToStringEx(null, null));
-			Assert.AreEqual("1", string.Empty.ToStringEx(null, "1"));
-		}
-
-		[Test]
 		public void ShouldSpecialGetValueOnNonNullNullableGenericTryParseTest()
 		{
 			int? ovalue;
@@ -533,6 +519,18 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 			result = ((string)null).TryParse(typeof(int?), out ovalue);
 			Assert.IsTrue(result);
 			Assert.AreEqual((int?)null, ovalue);
+		}
+
+		[Test]
+		public void ShouldToStringExTest()
+		{
+			Assert.AreEqual("123.456", 123.456.ToStringEx());
+			Assert.AreEqual("123.46", 123.456.ToStringEx("n"));
+			Assert.AreEqual("urn:foo", new Uri("urn:foo").ToStringEx("n"));
+
+			Assert.AreEqual(string.Empty, ((object)null).ToStringEx(null));
+			Assert.AreEqual(string.Empty, ((object)null).ToStringEx(null, null));
+			Assert.AreEqual("1", string.Empty.ToStringEx(null, "1"));
 		}
 
 		[Test]

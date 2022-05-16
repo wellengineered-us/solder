@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -128,7 +128,7 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 		/// <returns> An object of the target type or null. </returns>
 		public override object DeserializeObjectFromTextReader(TextReader textReader, Type targetType)
 		{
-			throw new NotSupportedException();
+			throw new NotSupportedException("BSON is binary, NOT textual.");
 		}
 
 		/// <summary>
@@ -221,7 +221,7 @@ namespace WellEngineered.Solder.Serialization.JsonNet
 		/// <param name="obj"> The object graph to serialize. </param>
 		public override void SerializeObjectToTextWriter(TextWriter textWriter, Type targetType, object obj)
 		{
-			throw new NotImplementedException();
+			throw new NotSupportedException("BSON is binary, NOT textual.");
 		}
 
 		#endregion

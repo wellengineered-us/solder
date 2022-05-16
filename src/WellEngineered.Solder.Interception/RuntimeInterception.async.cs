@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -20,7 +20,7 @@ namespace WellEngineered.Solder.Interception
 	{
 		#region Methods/Operators
 
-		private async ValueTask<Exception> CoreAfterInvokeAsync(bool proceedWithInvocation, IRuntimeInvocation runtimeInvocation, Exception thrownException, CancellationToken cancellationToken = default)
+		protected virtual async ValueTask<Exception> CoreAfterInvokeAsync(bool proceedWithInvocation, IRuntimeInvocation runtimeInvocation, Exception thrownException, CancellationToken cancellationToken = default)
 		{
 			if ((object)runtimeInvocation == null)
 				throw new ArgumentNullException(nameof(runtimeInvocation));

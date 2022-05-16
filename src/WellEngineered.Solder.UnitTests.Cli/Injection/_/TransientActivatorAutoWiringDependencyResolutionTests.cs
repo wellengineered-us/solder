@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -13,7 +13,6 @@ using NUnit.Framework;
 using WellEngineered.Solder.Injection;
 using WellEngineered.Solder.Injection.Resolutions;
 using WellEngineered.Solder.UnitTests.Cli.TestingInfrastructure;
-using WellEngineered.Solder.Utilities;
 
 namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 {
@@ -252,7 +251,6 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 			result = transientActivatorAutoWiringDependencyResolution.Resolve(mockDependencyManager, typeof(object), null);
 		}
 
-		
 		[Test]
 		[ExpectedException(typeof(ArgumentNullException))]
 		public void ShouldFailOnNullTypeResolveTest()

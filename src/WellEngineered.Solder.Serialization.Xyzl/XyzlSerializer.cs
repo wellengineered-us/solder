@@ -1,11 +1,10 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -72,12 +71,6 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 		#endregion
 
 		#region Methods/Operators
-
-		[Conditional("DEBUG")]
-		private static void DebugWrite(string message)
-		{
-			Console.WriteLine(message);
-		}
 
 		/// <summary>
 		/// Clears all known XML configuration object registrations.
@@ -177,7 +170,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				}
 				else if (xmlReader.NodeType == XmlNodeType.Element) // actual elements
 				{
-					DebugWrite(string.Format("{2} <{0}{1}>", xmlReader.LocalName, xmlReader.IsEmptyElement ? " /" : string.Empty, xmlReader.IsEmptyElement ? "empty" : "begin"));
+					// DebugWrite(string.Format("{2} <{0}{1}>", xmlReader.LocalName, xmlReader.IsEmptyElement ? " /" : string.Empty, xmlReader.IsEmptyElement ? "empty" : "begin"));
 
 					// stash away previous element
 					//previousElementXyzlName = elementXyzlName;
@@ -248,7 +241,7 @@ namespace WellEngineered.Solder.Serialization.Xyzl
 				}
 				else if (xmlReader.NodeType == XmlNodeType.EndElement) // closing element
 				{
-					DebugWrite(string.Format("end <{0}>", xmlReader.LocalName));
+					// DebugWrite(string.Format("end <{0}>", xmlReader.LocalName));
 
 					// create the element XML name
 					elementXyzlName = new XyzlName()

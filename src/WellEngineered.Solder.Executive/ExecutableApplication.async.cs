@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -19,17 +19,19 @@ namespace WellEngineered.Solder.Executive
 	{
 		#region Methods/Operators
 
-		public static async ValueTask<int> ResolveRunAsync<TExecutableApplication>(string[] args)
+		public static async ValueTask<int> ResolveRunAsync<TExecutableApplication>(string[] args, CancellationToken cancellationToken = default)
 			where TExecutableApplication : IExecutableApplication
 		{
 			await using (AssemblyDomain assemblyDomain = AssemblyDomain.Default)
 			{
-				await using (TExecutableApplication executableApplication = assemblyDomain
+				await assemblyDomain.InitializeAsync(cancellationToken);
+
+				await using (TExecutableApplication executableApplication = await assemblyDomain
 								.DependencyManager
-								.ResolveDependency<TExecutableApplication>(string.Empty, true))
+								.ResolveDependencyAsync<TExecutableApplication>(string.Empty, true, cancellationToken))
 				{
 					await executableApplication.CreateAsync();
-					return await executableApplication.RunAsync(args);
+					return await executableApplication.RunAsync(args, cancellationToken);
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -25,8 +25,7 @@ namespace WellEngineered.Solder.UnitTests.Cli.TestingInfrastructure
 		}
 
 		[DependencyInjection(SelectorKey = "named_dep_obj")]
-		public MockAmbiguousCtorMatchDependantObject([DependencyInjection(SelectorKey = "named_dep_obj")]
-			MockAmbiguousCtorMatchDependantObject left, [DependencyInjection] MockAmbiguousCtorMatchDependantObject right)
+		public MockAmbiguousCtorMatchDependantObject([DependencyInjection(SelectorKey = "named_dep_obj")] MockAmbiguousCtorMatchDependantObject left, [DependencyInjection] MockAmbiguousCtorMatchDependantObject right)
 		{
 			this.text = string.Empty;
 			this.left = left;

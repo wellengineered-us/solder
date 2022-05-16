@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -21,18 +21,18 @@ namespace WellEngineered.Solder.Component
 
 		protected override async ValueTask CoreCreateAsync(bool creating, CancellationToken cancellationToken = default)
 		{
-			ISolderConfiguration untypedSolderConfiguration;
-			IUnknownSolderConfiguration<ISolderSpecification> typedSolderConfiguration;
+			IUnknownSolderConfiguration untypedUnknownSolderConfiguration;
+			IUnknownSolderConfiguration<ISolderSpecification> typedUnknownSolderConfiguration;
 
 			if (creating)
 			{
 				await base.CoreCreateAsync(creating, cancellationToken);
 
-				untypedSolderConfiguration = this.Configuration; // assuming a cast to subtype
+				untypedUnknownSolderConfiguration = this.Configuration;
 
-				typedSolderConfiguration = this.CoreCreateTypedUnknownConfiguration();
+				typedUnknownSolderConfiguration = this.CoreCreateTypedUnknownConfiguration(untypedUnknownSolderConfiguration);
 
-				this.Specification = typedSolderConfiguration.Specification;
+				this.Specification = typedUnknownSolderConfiguration.Specification;
 
 				this.AssertValidSpecification();
 			}
@@ -47,7 +47,7 @@ namespace WellEngineered.Solder.Component
 				await base.CoreDisposeAsync(disposing, cancellationToken);
 			}
 		}
-		
+
 		#endregion
 	}
 }

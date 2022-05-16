@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -12,12 +12,14 @@ using WellEngineered.Solder.Primitives;
 
 namespace WellEngineered.Solder.Injection
 {
-	internal sealed class AsyncUsingBlockProxy
-		: AsyncLifecycle
+	internal sealed class AsyncUsingBlockProxy<TAsyncDisposable>
+		: AsyncLifecycle,
+			IAsyncDisposableDispatch<TAsyncDisposable>
+		where TAsyncDisposable : IAsyncDisposable
 	{
 		#region Constructors/Destructors
 
-		public AsyncUsingBlockProxy(IResourceManager resourceManager, Guid? slotId, IAsyncDisposable asyncDisposable)
+		public AsyncUsingBlockProxy(IResourceManager resourceManager, Guid? slotId, TAsyncDisposable asyncTarget)
 		{
 			if ((object)resourceManager == null)
 				throw new ArgumentNullException(nameof(resourceManager));
@@ -25,19 +27,19 @@ namespace WellEngineered.Solder.Injection
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
 
-			if ((object)asyncDisposable == null)
-				throw new ArgumentNullException(nameof(asyncDisposable));
+			if ((object)asyncTarget == null)
+				throw new ArgumentNullException(nameof(asyncTarget));
 
 			this.resourceManager = resourceManager;
 			this.slotId = slotId;
-			this.asyncDisposable = asyncDisposable;
+			this.asyncTarget = asyncTarget;
 		}
 
 		#endregion
 
 		#region Fields/Constants
 
-		private readonly IAsyncDisposable asyncDisposable;
+		private readonly TAsyncDisposable asyncTarget;
 		private readonly IResourceManager resourceManager;
 		private readonly Guid? slotId;
 
@@ -45,11 +47,11 @@ namespace WellEngineered.Solder.Injection
 
 		#region Properties/Indexers/Events
 
-		private IAsyncDisposable AsyncDisposable
+		public TAsyncDisposable AsyncTarget
 		{
 			get
 			{
-				return this.asyncDisposable;
+				return this.asyncTarget;
 			}
 		}
 
@@ -81,10 +83,10 @@ namespace WellEngineered.Solder.Injection
 
 		protected async override ValueTask CoreDisposeAsync(bool disposing, CancellationToken cancellationToken = default)
 		{
-			if ((object)this.AsyncDisposable != null)
+			if ((object)this.AsyncTarget != null)
 			{
-				await this.AsyncDisposable.SafeDisposeAsync(cancellationToken);
-				await this.ResourceManager.DisposeAsync(this.SlotId, this.AsyncDisposable, cancellationToken);
+				await this.AsyncTarget.SafeDisposeAsync(cancellationToken);
+				await this.ResourceManager.DisposeAsync(this.SlotId, this.AsyncTarget, cancellationToken);
 			}
 		}
 

@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -26,14 +26,14 @@ namespace WellEngineered.Solder.Injection
 
 		public ResourceManager()
 			: this(new ObjectIDGenerator(),
-				new ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>>(),
-				new ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>>())
+				new ConcurrentDictionary<Guid?, IList<DisposableWeakReference>>(),
+				new ConcurrentDictionary<Guid?, IList<AsyncDisposableWeakReference>>())
 		{
 		}
 
 		public ResourceManager(ObjectIDGenerator objectIdGenerator,
-			ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> trackedResources,
-			ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>> asyncTrackedResources)
+			ConcurrentDictionary<Guid?, IList<DisposableWeakReference>> trackedResources,
+			ConcurrentDictionary<Guid?, IList<AsyncDisposableWeakReference>> asyncTrackedResources)
 		{
 			if ((object)objectIdGenerator == null)
 				throw new ArgumentNullException(nameof(objectIdGenerator));
@@ -52,12 +52,12 @@ namespace WellEngineered.Solder.Injection
 #else
 		public ResourceManager()
 			: this(new ObjectIDGenerator(),
-				new ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>>())
+				new ConcurrentDictionary<Guid?, IList<DisposableWeakReference>>())
 		{
 		}
 
 		public ResourceManager(ObjectIDGenerator objectIdGenerator,
-			ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> trackedResources)
+			ConcurrentDictionary<Guid?, IList<DisposableWeakReference>> trackedResources)
 		{
 			if ((object)objectIdGenerator == null)
 				throw new ArgumentNullException(nameof(objectIdGenerator));
@@ -76,7 +76,7 @@ namespace WellEngineered.Solder.Injection
 		#region Fields/Constants
 
 		private readonly ObjectIDGenerator objectIdGenerator;
-		private readonly ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> trackedResources;
+		private readonly ConcurrentDictionary<Guid?, IList<DisposableWeakReference>> trackedResources;
 
 		#endregion
 
@@ -90,7 +90,7 @@ namespace WellEngineered.Solder.Injection
 			}
 		}
 
-		private ConcurrentDictionary<Guid?, IList<WeakReference<IDisposable>>> TrackedResources
+		private ConcurrentDictionary<Guid?, IList<DisposableWeakReference>> TrackedResources
 		{
 			get
 			{
@@ -118,22 +118,21 @@ namespace WellEngineered.Solder.Injection
 
 			sb = new StringBuilder();
 
-			foreach (KeyValuePair<Guid?, IList<WeakReference<IDisposable>>> trackedResource in this.TrackedResources)
+			foreach (KeyValuePair<Guid?, IList<DisposableWeakReference>> trackedResource in this.TrackedResources)
 			{
 				if ((object)trackedResource.Key == null ||
 					(object)trackedResource.Value == null)
 					throw NewExceptionWithCallerInfo<ResourceException>((value) => new ResourceException(value));
 
 				Guid? slotId = trackedResource.Key;
-				IList<WeakReference<IDisposable>> disposables = trackedResource.Value;
+				IList<DisposableWeakReference> disposables = trackedResource.Value;
 				int size = disposables.Count;
 				int ezis = 0;
 
-				foreach (WeakReference<IDisposable> disposable in disposables)
+				foreach (DisposableWeakReference disposable in disposables)
 				{
 					IDisposableEx disposableEx;
-
-					disposable.TryGetTarget(out IDisposable _disposable);
+					IDisposable _disposable = disposable.Target;
 
 					if ((object)(disposableEx = _disposable as IDisposableEx) != null &&
 						disposableEx.IsDisposed)
@@ -188,8 +187,8 @@ namespace WellEngineered.Solder.Injection
 
 		public void Dispose(Guid? slotId, IDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 		{
-			IList<WeakReference<IDisposable>> disposables;
-			WeakReference<IDisposable> _disposable;
+			IList<DisposableWeakReference> disposables;
+			DisposableWeakReference _disposable;
 
 			if ((object)slotId == null)
 				throw new ArgumentNullException(nameof(slotId));
@@ -206,7 +205,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			_disposable = new WeakReference<IDisposable>(disposable);
+			_disposable = new DisposableWeakReference(disposable);
 
 			if (!this.TrackedResources.TryGetValue(slotId, out disposables) || !disposables.Contains(_disposable))
 				throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, disposable));
@@ -330,8 +329,8 @@ namespace WellEngineered.Solder.Injection
 
 		private void Slot(string caller, Guid? slotId, IDisposable disposable, string message)
 		{
-			IList<WeakReference<IDisposable>> disposables;
-			WeakReference<IDisposable> _disposable;
+			IList<DisposableWeakReference> disposables;
+			DisposableWeakReference _disposable;
 
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -345,7 +344,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
 
-			_disposable = new WeakReference<IDisposable>(disposable);
+			_disposable = new DisposableWeakReference(disposable);
 
 			if (this.TrackedResources.TryGetValue(slotId, out disposables))
 			{
@@ -354,7 +353,7 @@ namespace WellEngineered.Solder.Injection
 			}
 			else
 			{
-				disposables = new List<WeakReference<IDisposable>>();
+				disposables = new List<DisposableWeakReference>();
 
 				if (!this.TrackedResources.TryAdd(slotId, disposables))
 					throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, disposable));
@@ -365,10 +364,9 @@ namespace WellEngineered.Solder.Injection
 			this.Print(caller, message);
 		}
 
-		public IDisposableDispatch<TDisposable> Using<TDisposable>(Guid? slotId, TDisposable disposable, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public IDisposableDispatch<TDisposable> Using<TDisposable>(Guid? slotId, TDisposable disposable, Action onDisposal = null, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 			where TDisposable : IDisposable
 		{
-			IDisposable ldlProxyDisposable;
 			IDisposableDispatch<TDisposable> disposableDispatch;
 
 			if ((object)slotId == null)
@@ -386,9 +384,8 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			ldlProxyDisposable = new UsingBlockProxy(this, slotId, disposable); // forward call to .Dispose()
-
-			disposableDispatch = new DisposableDispatch<TDisposable>(ldlProxyDisposable, disposable);
+			disposableDispatch = new UsingBlockProxy<TDisposable>(this, slotId, disposable); // forward call to .Dispose()
+			disposableDispatch.SafeCreate();
 
 			this.Slot(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, disposable, FormatOperation(this.ObjectIdGenerator, "using", slotId, disposable));
 

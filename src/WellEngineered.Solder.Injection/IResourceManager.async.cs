@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -32,7 +32,7 @@ namespace WellEngineered.Solder.Injection
 
 		ValueTask ResetAsync(CancellationToken cancellationToken = default);
 
-		ValueTask<IAsyncDisposableDispatch<TAsyncDisposable>> UsingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		ValueTask<IAsyncDisposableDispatch<TAsyncDisposable>> UsingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, Action onAsyncDisposal = null, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 			where TAsyncDisposable : IAsyncDisposable;
 
 		ValueTask WatchingAsync(Guid? slotId, IAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null);

@@ -1,10 +1,12 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
+#if ASYNC_ALL_THE_WAY_DOWN
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WellEngineered.Solder.Serialization
@@ -13,9 +15,9 @@ namespace WellEngineered.Solder.Serialization
 	{
 		#region Methods/Operators
 
-		public abstract ValueTask<object> DeserializeObjectFromBinaryReaderAsync(BinaryReader binaryReader, Type targetType);
+		public abstract ValueTask<object> DeserializeObjectFromBinaryReaderAsync(BinaryReader binaryReader, Type targetType, CancellationToken cancellationToken = default);
 
-		public async ValueTask<TObject> DeserializeObjectFromBinaryReaderAsync<TObject>(BinaryReader binaryReader)
+		public async ValueTask<TObject> DeserializeObjectFromBinaryReaderAsync<TObject>(BinaryReader binaryReader, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -29,12 +31,12 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public async ValueTask<object> DeserializeObjectFromBufferAsync(Memory<byte> value, Type targetType)
+		public async ValueTask<object> DeserializeObjectFromBufferAsync(Memory<byte> value, Type targetType, CancellationToken cancellationToken = default)
 		{
 			object obj;
 			BinaryReader binaryReader;
 
-			using (Stream stream = new MemoryStream(value.ToArray()))
+			await using (Stream stream = new MemoryStream(value.ToArray()))
 			{
 				using (binaryReader = new BinaryReader(stream))
 				{
@@ -44,7 +46,7 @@ namespace WellEngineered.Solder.Serialization
 			}
 		}
 
-		public async ValueTask<TObject> DeserializeObjectFromBufferAsync<TObject>(Memory<byte> value)
+		public async ValueTask<TObject> DeserializeObjectFromBufferAsync<TObject>(Memory<byte> value, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -58,12 +60,12 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public async ValueTask<object> DeserializeObjectFromByteArrayAsync(byte[] value, Type targetType)
+		public async ValueTask<object> DeserializeObjectFromByteArrayAsync(byte[] value, Type targetType, CancellationToken cancellationToken = default)
 		{
 			object obj;
 			BinaryReader binaryReader;
 
-			using (Stream stream = new MemoryStream(value))
+			await using (Stream stream = new MemoryStream(value))
 			{
 				using (binaryReader = new BinaryReader(stream))
 				{
@@ -73,7 +75,7 @@ namespace WellEngineered.Solder.Serialization
 			}
 		}
 
-		public async ValueTask<TObject> DeserializeObjectFromByteArrayAsync<TObject>(byte[] value)
+		public async ValueTask<TObject> DeserializeObjectFromByteArrayAsync<TObject>(byte[] value, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -87,17 +89,17 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public ValueTask<object> DeserializeObjectFromCharArrayAsync(char[] value, Type targetType)
+		public ValueTask<object> DeserializeObjectFromCharArrayAsync(char[] value, Type targetType, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ValueTask<TObject> DeserializeObjectFromCharArrayAsync<TObject>(char[] value)
+		public ValueTask<TObject> DeserializeObjectFromCharArrayAsync<TObject>(char[] value, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
 
-		public async ValueTask<object> DeserializeObjectFromFileAsync(string inputFilePath, Type targetType)
+		public async ValueTask<object> DeserializeObjectFromFileAsync(string inputFilePath, Type targetType, CancellationToken cancellationToken = default)
 		{
 			object obj;
 
@@ -107,13 +109,13 @@ namespace WellEngineered.Solder.Serialization
 			if ((object)targetType == null)
 				throw new ArgumentNullException(nameof(targetType));
 
-			using (Stream stream = File.Open(inputFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+			await using (Stream stream = File.Open(inputFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
 				obj = await this.DeserializeObjectFromStreamAsync(stream, targetType);
 
 			return obj;
 		}
 
-		public async ValueTask<TObject> DeserializeObjectFromFileAsync<TObject>(string inputFilePath)
+		public async ValueTask<TObject> DeserializeObjectFromFileAsync<TObject>(string inputFilePath, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -127,9 +129,9 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public abstract ValueTask<object> DeserializeObjectFromStreamAsync(Stream stream, Type targetType);
+		public abstract ValueTask<object> DeserializeObjectFromStreamAsync(Stream stream, Type targetType, CancellationToken cancellationToken = default);
 
-		public async ValueTask<TObject> DeserializeObjectFromStreamAsync<TObject>(Stream stream)
+		public async ValueTask<TObject> DeserializeObjectFromStreamAsync<TObject>(Stream stream, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -143,7 +145,7 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public async ValueTask<object> DeserializeObjectFromStringAsync(string value, Type targetType)
+		public async ValueTask<object> DeserializeObjectFromStringAsync(string value, Type targetType, CancellationToken cancellationToken = default)
 		{
 			object obj;
 			StringReader stringReader;
@@ -155,7 +157,7 @@ namespace WellEngineered.Solder.Serialization
 			}
 		}
 
-		public async ValueTask<TObject> DeserializeObjectFromStringAsync<TObject>(string value)
+		public async ValueTask<TObject> DeserializeObjectFromStringAsync<TObject>(string value, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -169,9 +171,9 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public abstract ValueTask<object> DeserializeObjectFromTextReaderAsync(TextReader textReader, Type targetType);
+		public abstract ValueTask<object> DeserializeObjectFromTextReaderAsync(TextReader textReader, Type targetType, CancellationToken cancellationToken = default);
 
-		public async ValueTask<TObject> DeserializeObjectFromTextReaderAsync<TObject>(TextReader textReader)
+		public async ValueTask<TObject> DeserializeObjectFromTextReaderAsync<TObject>(TextReader textReader, CancellationToken cancellationToken = default)
 		{
 			TObject obj;
 			Type targetType;
@@ -185,9 +187,9 @@ namespace WellEngineered.Solder.Serialization
 			return obj;
 		}
 
-		public abstract ValueTask SerializeObjectToBinaryWriterAsync(BinaryWriter binaryWriter, Type targetType, object obj);
+		public abstract ValueTask SerializeObjectToBinaryWriterAsync(BinaryWriter binaryWriter, Type targetType, object obj, CancellationToken cancellationToken = default);
 
-		public async ValueTask SerializeObjectToBinaryWriterAsync<TObject>(BinaryWriter binaryWriter, TObject obj)
+		public async ValueTask SerializeObjectToBinaryWriterAsync<TObject>(BinaryWriter binaryWriter, TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -202,14 +204,14 @@ namespace WellEngineered.Solder.Serialization
 			await this.SerializeObjectToBinaryWriterAsync(binaryWriter, targetType, (object)obj);
 		}
 
-		public async ValueTask<Memory<byte>> SerializeObjectToBufferAsync(Type targetType, object obj)
+		public async ValueTask<Memory<byte>> SerializeObjectToBufferAsync(Type targetType, object obj, CancellationToken cancellationToken = default)
 		{
 			if ((object)obj == null)
 				throw new ArgumentNullException(nameof(obj));
 
-			using (MemoryStream memoryStream = new MemoryStream())
+			await using (MemoryStream memoryStream = new MemoryStream())
 			{
-				using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
+				await using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
 				{
 					await this.SerializeObjectToBinaryWriterAsync(binaryWriter, obj);
 					return memoryStream.ToArray();
@@ -217,7 +219,7 @@ namespace WellEngineered.Solder.Serialization
 			}
 		}
 
-		public async ValueTask<Memory<byte>> SerializeObjectToBufferAsync<TObject>(TObject obj)
+		public async ValueTask<Memory<byte>> SerializeObjectToBufferAsync<TObject>(TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -229,14 +231,14 @@ namespace WellEngineered.Solder.Serialization
 			return await this.SerializeObjectToByteArrayAsync(targetType, (object)obj);
 		}
 
-		public async ValueTask<byte[]> SerializeObjectToByteArrayAsync(Type targetType, object obj)
+		public async ValueTask<byte[]> SerializeObjectToByteArrayAsync(Type targetType, object obj, CancellationToken cancellationToken = default)
 		{
 			if ((object)obj == null)
 				throw new ArgumentNullException(nameof(obj));
 
-			using (MemoryStream memoryStream = new MemoryStream())
+			await using (MemoryStream memoryStream = new MemoryStream())
 			{
-				using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
+				await using (BinaryWriter binaryWriter = new BinaryWriter(memoryStream))
 				{
 					await this.SerializeObjectToBinaryWriterAsync(binaryWriter, obj);
 					return memoryStream.ToArray();
@@ -244,7 +246,7 @@ namespace WellEngineered.Solder.Serialization
 			}
 		}
 
-		public async ValueTask<byte[]> SerializeObjectToByteArrayAsync<TObject>(TObject obj)
+		public async ValueTask<byte[]> SerializeObjectToByteArrayAsync<TObject>(TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -256,17 +258,17 @@ namespace WellEngineered.Solder.Serialization
 			return await this.SerializeObjectToByteArrayAsync(targetType, (object)obj);
 		}
 
-		public ValueTask<char[]> SerializeObjectToCharArrayAsync(Type targetType, object obj)
+		public ValueTask<char[]> SerializeObjectToCharArrayAsync(Type targetType, object obj, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ValueTask<char[]> SerializeObjectToCharArrayAsync<TObject>(TObject obj)
+		public ValueTask<char[]> SerializeObjectToCharArrayAsync<TObject>(TObject obj, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
 
-		public async ValueTask SerializeObjectToFileAsync<TObject>(string outputFilePath, TObject obj)
+		public async ValueTask SerializeObjectToFileAsync<TObject>(string outputFilePath, TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -281,7 +283,7 @@ namespace WellEngineered.Solder.Serialization
 			await this.SerializeObjectToFileAsync(outputFilePath, targetType, (object)obj);
 		}
 
-		public async ValueTask SerializeObjectToFileAsync(string outputFilePath, Type targetType, object obj)
+		public async ValueTask SerializeObjectToFileAsync(string outputFilePath, Type targetType, object obj, CancellationToken cancellationToken = default)
 		{
 			if ((object)outputFilePath == null)
 				throw new ArgumentNullException(nameof(outputFilePath));
@@ -292,13 +294,13 @@ namespace WellEngineered.Solder.Serialization
 			if ((object)obj == null)
 				throw new ArgumentNullException(nameof(obj));
 
-			using (Stream stream = File.Open(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+			await using (Stream stream = File.Open(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
 				await this.SerializeObjectToStreamAsync(stream, targetType, obj);
 		}
 
-		public abstract ValueTask SerializeObjectToStreamAsync(Stream stream, Type targetType, object obj);
+		public abstract ValueTask SerializeObjectToStreamAsync(Stream stream, Type targetType, object obj, CancellationToken cancellationToken = default);
 
-		public async ValueTask SerializeObjectToStreamAsync<TObject>(Stream stream, TObject obj)
+		public async ValueTask SerializeObjectToStreamAsync<TObject>(Stream stream, TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -313,7 +315,7 @@ namespace WellEngineered.Solder.Serialization
 			await this.SerializeObjectToStreamAsync(stream, targetType, (object)obj);
 		}
 
-		public async ValueTask<string> SerializeObjectToStringAsync(Type targetType, object obj)
+		public async ValueTask<string> SerializeObjectToStringAsync(Type targetType, object obj, CancellationToken cancellationToken = default)
 		{
 			StringWriter stringWriter;
 
@@ -323,14 +325,14 @@ namespace WellEngineered.Solder.Serialization
 			if ((object)obj == null)
 				throw new ArgumentNullException(nameof(obj));
 
-			using (stringWriter = new StringWriter())
+			await using (stringWriter = new StringWriter())
 			{
 				await this.SerializeObjectToTextWriterAsync(stringWriter, targetType, obj);
 				return stringWriter.ToString();
 			}
 		}
 
-		public async ValueTask<string> SerializeObjectToStringAsync<TObject>(TObject obj)
+		public async ValueTask<string> SerializeObjectToStringAsync<TObject>(TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -342,9 +344,9 @@ namespace WellEngineered.Solder.Serialization
 			return await this.SerializeObjectToStringAsync(targetType, (object)obj);
 		}
 
-		public abstract ValueTask SerializeObjectToTextWriterAsync(TextWriter textWriter, Type targetType, object obj);
+		public abstract ValueTask SerializeObjectToTextWriterAsync(TextWriter textWriter, Type targetType, object obj, CancellationToken cancellationToken = default);
 
-		public async ValueTask SerializeObjectToTextWriterAsync<TObject>(TextWriter textWriter, TObject obj)
+		public async ValueTask SerializeObjectToTextWriterAsync<TObject>(TextWriter textWriter, TObject obj, CancellationToken cancellationToken = default)
 		{
 			Type targetType;
 
@@ -362,3 +364,4 @@ namespace WellEngineered.Solder.Serialization
 		#endregion
 	}
 }
+#endif

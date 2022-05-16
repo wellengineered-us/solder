@@ -1,5 +1,5 @@
 /*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -60,21 +60,17 @@ namespace WellEngineered.Solder.Injection.Resolutions
 			if ((object)selectorKey == null)
 				throw new ArgumentNullException(nameof(selectorKey));
 
-			// cop a reader lock
-			using (await this.AsyncReaderWriterLock.ReaderLockAsync(cancellationToken))
+			// cop a writer lock
+			using (this.AsyncReaderWriterLock.WriterLock())
 			{
-				if (this.Frozen)
-					return this.Instance;
-
-				if (this.IsAsyncDisposed)
-					throw new ObjectDisposedException(typeof(DependencyManager).FullName);
-
-				// cop a writer lock
-				using (await this.AsyncReaderWriterLock.WriterLockAsync(cancellationToken))
+				// ...
+				if (!this.Frozen)
 				{
 					this.Instance = await this.InnerDependencyResolution.ResolveAsync(dependencyManager, selectorKey, cancellationToken);
-					return this.Instance;
+					this.Frozen = true;
 				}
+
+				return this.Instance;
 			}
 		}
 

@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -81,7 +81,7 @@ namespace WellEngineered.Solder.Component
 		{
 			get
 			{
-				this.ApplyUntypedSpecification(); // special case
+				this.CoreApplyUntypedSpecification(); // special case
 				return this.untypedSolderSpecification;
 			}
 			set
@@ -95,13 +95,16 @@ namespace WellEngineered.Solder.Component
 
 		#region Methods/Operators
 
-		private void ApplyUntypedSpecification()
+		protected virtual void CoreApplyUntypedSpecification()
 		{
-			this.ApplyUntypedSpecification(this.SpecificationType);
+			this.CoreApplyUntypedSpecification(this.SpecificationType);
 		}
 
-		private void ApplyUntypedSpecification(Type specificationType)
+		protected virtual void CoreApplyUntypedSpecification(Type specificationType)
 		{
+			if ((object)specificationType == null)
+				throw new ArgumentNullException(nameof(specificationType));
+
 			if ((object)this.Specification != null)
 			{
 				this.UntypedSolderComponentSpecification = (ISolderSpecification)
@@ -147,7 +150,7 @@ namespace WellEngineered.Solder.Component
 
 								// "Hey Component, tell me what your Specification type is?"
 								specificationType = solderComponent.SpecificationType;
-								this.ApplyUntypedSpecification(specificationType);
+								this.CoreApplyUntypedSpecification(specificationType);
 
 								//messages = this.UntypedComponentSpecification.Validate(componentContext);
 								messages = solderComponent.Specification.Validate(componentContext);

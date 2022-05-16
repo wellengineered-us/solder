@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -135,20 +135,6 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 
 		[Test]
 		[ExpectedException(typeof(ArgumentNullException))]
-		public void ShouldFailOnNullFactoryMethodCreateTest()
-		{
-			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
-			Func<int> value;
-			Func<ValueTask<int>> asyncValue;
-
-			value = null;
-			asyncValue = async () => await Task.FromResult<int>(7);
-
-			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
-		}
-		
-		[Test]
-		[ExpectedException(typeof(ArgumentNullException))]
 		public void ShouldFailOnNullFactoryMethodCreateAsyncTest()
 		{
 			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
@@ -157,6 +143,20 @@ namespace WellEngineered.Solder.UnitTests.Cli.Injection._
 
 			value = () => 11;
 			asyncValue = null;
+
+			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
+		}
+
+		[Test]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void ShouldFailOnNullFactoryMethodCreateTest()
+		{
+			TransientFactoryMethodDependencyResolution<int> transientFactoryMethodDependencyResolution;
+			Func<int> value;
+			Func<ValueTask<int>> asyncValue;
+
+			value = null;
+			asyncValue = async () => await Task.FromResult<int>(7);
 
 			transientFactoryMethodDependencyResolution = new TransientFactoryMethodDependencyResolution<int>(value, asyncValue);
 		}

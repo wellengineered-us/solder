@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -96,7 +97,7 @@ namespace WellEngineered.Solder.Injection
 
 				// ...
 				{
-					result = await this.FreeDependencyResolutionsMustReadLockAsync();
+					result = await this.FreeDependencyResolutionsMustReadLockAsync(cancellationToken);
 					return result;
 				}
 			}
@@ -186,7 +187,7 @@ namespace WellEngineered.Solder.Injection
 			return result;
 		}
 
-		private async IAsyncEnumerable<KeyValuePair<Tuple<Type, string>, IDependencyResolution>> GetCandidateResolutionsMustReadLockAsync(Type resolutionType, string selectorKey, bool includeAssignableTypes, CancellationToken cancellationToken = default)
+		private async IAsyncEnumerable<KeyValuePair<Tuple<Type, string>, IDependencyResolution>> GetCandidateResolutionsMustReadLockAsync(Type resolutionType, string selectorKey, bool includeAssignableTypes, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			IEnumerable<KeyValuePair<Tuple<Type, string>, IDependencyResolution>> candidateResolutions;
 

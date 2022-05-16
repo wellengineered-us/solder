@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -69,16 +69,16 @@ namespace WellEngineered.Solder.Component
 
 		#region Methods/Operators
 
-		protected sealed override IUnknownSolderConfiguration<ISolderSpecification> CoreCreateTypedUnknownConfiguration()
+		protected abstract IUnknownSolderConfiguration<TSolderSpecification> CoreCreateGenericTypedUnknownConfiguration(IUnknownSolderConfiguration untypedUnknownSolderConfiguration);
+
+		protected sealed override IUnknownSolderConfiguration<ISolderSpecification> CoreCreateTypedUnknownConfiguration(IUnknownSolderConfiguration untypedUnknownSolderConfiguration)
 		{
-			IUnknownSolderConfiguration<TSolderSpecification> unknownSolderConfiguration;
+			IUnknownSolderConfiguration<TSolderSpecification> typedUnknownSolderConfiguration;
 
-			unknownSolderConfiguration = this.CoreCreateGenericTypedUnknownConfiguration();
+			typedUnknownSolderConfiguration = this.CoreCreateGenericTypedUnknownConfiguration(untypedUnknownSolderConfiguration);
 
-			return unknownSolderConfiguration;
+			return typedUnknownSolderConfiguration;
 		}
-
-		protected abstract IUnknownSolderConfiguration<TSolderSpecification> CoreCreateGenericTypedUnknownConfiguration();
 
 		#endregion
 	}

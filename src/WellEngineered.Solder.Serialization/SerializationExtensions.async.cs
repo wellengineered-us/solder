@@ -1,8 +1,9 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
+#if ASYNC_ALL_THE_WAY_DOWN
 using System;
 using System.IO;
 using System.Reflection;
@@ -37,7 +38,7 @@ namespace WellEngineered.Solder.Serialization
 
 			result = default(TObject);
 
-			using (Stream stream = resourceType.GetTypeInfo().Assembly.GetManifestResourceStream(resourceName))
+			await using (Stream stream = resourceType.GetTypeInfo().Assembly.GetManifestResourceStream(resourceName))
 			{
 				if ((object)stream != null)
 					result = await serializationStrategy.DeserializeObjectFromStreamAsync<TObject>(stream);
@@ -64,7 +65,7 @@ namespace WellEngineered.Solder.Serialization
 
 			result = null;
 
-			using (Stream stream = resourceType.GetTypeInfo().Assembly.GetManifestResourceStream(resourceName))
+			await using (Stream stream = resourceType.GetTypeInfo().Assembly.GetManifestResourceStream(resourceName))
 			{
 				if ((object)stream != null)
 				{
@@ -79,3 +80,4 @@ namespace WellEngineered.Solder.Serialization
 		#endregion
 	}
 }
+#endif

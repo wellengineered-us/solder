@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -22,13 +22,13 @@ namespace WellEngineered.Solder.Injection
 	{
 		#region Fields/Constants
 
-		private readonly ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>> asyncTrackedResources;
+		private readonly ConcurrentDictionary<Guid?, IList<AsyncDisposableWeakReference>> asyncTrackedResources;
 
 		#endregion
 
 		#region Properties/Indexers/Events
 
-		private ConcurrentDictionary<Guid?, IList<WeakReference<IAsyncDisposable>>> AsyncTrackedResources
+		private ConcurrentDictionary<Guid?, IList<AsyncDisposableWeakReference>> AsyncTrackedResources
 		{
 			get
 			{
@@ -56,22 +56,21 @@ namespace WellEngineered.Solder.Injection
 
 			sb = new StringBuilder();
 
-			foreach (KeyValuePair<Guid?, IList<WeakReference<IAsyncDisposable>>> trackedResource in this.AsyncTrackedResources)
+			foreach (KeyValuePair<Guid?, IList<AsyncDisposableWeakReference>> trackedResource in this.AsyncTrackedResources)
 			{
 				if ((object)trackedResource.Key == null ||
 					(object)trackedResource.Value == null)
 					throw NewExceptionWithCallerInfo<ResourceException>((value) => new ResourceException(value));
 
 				Guid? slotId = trackedResource.Key;
-				IList<WeakReference<IAsyncDisposable>> asyncDisposables = trackedResource.Value;
+				IList<AsyncDisposableWeakReference> asyncDisposables = trackedResource.Value;
 				int size = asyncDisposables.Count;
 				int ezis = 0;
 
-				foreach (WeakReference<IAsyncDisposable> asyncDisposable in asyncDisposables)
+				foreach (AsyncDisposableWeakReference asyncDisposable in asyncDisposables)
 				{
 					IAsyncDisposableEx asyncDisposableEx;
-
-					asyncDisposable.TryGetTarget(out IAsyncDisposable _asynDisposable);
+					IAsyncDisposable _asynDisposable = asyncDisposable.Target;
 
 					if ((object)(asyncDisposableEx = _asynDisposable as IAsyncDisposableEx) != null &&
 						asyncDisposableEx.IsAsyncDisposed)
@@ -132,8 +131,8 @@ namespace WellEngineered.Solder.Injection
 
 		private async ValueTask DisposeAsync(string caller, Guid? slotId, IAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default)
 		{
-			IList<WeakReference<IAsyncDisposable>> asyncDisposables;
-			WeakReference<IAsyncDisposable> _asyncDisposable;
+			IList<AsyncDisposableWeakReference> asyncDisposables;
+			AsyncDisposableWeakReference _asyncDisposable;
 
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -144,7 +143,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)asyncDisposable == null)
 				throw new ArgumentNullException(nameof(asyncDisposable));
 
-			_asyncDisposable = new WeakReference<IAsyncDisposable>(asyncDisposable);
+			_asyncDisposable = new AsyncDisposableWeakReference(asyncDisposable);
 
 			if (!this.AsyncTrackedResources.TryGetValue(slotId, out asyncDisposables) || !asyncDisposables.Contains(_asyncDisposable))
 				throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, asyncDisposable));
@@ -281,8 +280,8 @@ namespace WellEngineered.Solder.Injection
 
 		private async ValueTask SlotAsync(string caller, Guid? slotId, IAsyncDisposable asyncDisposable, string message, CancellationToken cancellationToken = default)
 		{
-			IList<WeakReference<IAsyncDisposable>> asyncDisposables;
-			WeakReference<IAsyncDisposable> _asyncDisposable;
+			IList<AsyncDisposableWeakReference> asyncDisposables;
+			AsyncDisposableWeakReference _asyncDisposable;
 
 			if ((object)caller == null)
 				throw new ArgumentNullException(nameof(caller));
@@ -296,7 +295,7 @@ namespace WellEngineered.Solder.Injection
 			if ((object)message == null)
 				throw new ArgumentNullException(nameof(message));
 
-			_asyncDisposable = new WeakReference<IAsyncDisposable>(asyncDisposable);
+			_asyncDisposable = new AsyncDisposableWeakReference(asyncDisposable);
 
 			if (this.AsyncTrackedResources.TryGetValue(slotId, out asyncDisposables))
 			{
@@ -305,7 +304,7 @@ namespace WellEngineered.Solder.Injection
 			}
 			else
 			{
-				asyncDisposables = new List<WeakReference<IAsyncDisposable>>();
+				asyncDisposables = new List<AsyncDisposableWeakReference>();
 
 				if (!this.AsyncTrackedResources.TryAdd(slotId, asyncDisposables))
 					throw new ResourceException(FormatOperation(this.ObjectIdGenerator, "error", slotId, asyncDisposable));
@@ -316,10 +315,9 @@ namespace WellEngineered.Solder.Injection
 			await this.PrintAsync(caller, message, cancellationToken);
 		}
 
-		public async ValueTask<IAsyncDisposableDispatch<TAsyncDisposable>> UsingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
+		public async ValueTask<IAsyncDisposableDispatch<TAsyncDisposable>> UsingAsync<TAsyncDisposable>(Guid? slotId, TAsyncDisposable asyncDisposable, CancellationToken cancellationToken = default, Action onAsyncDisposal = null, [CallerFilePath] string callerFilePath = null, [CallerLineNumber] int? callerLineNumber = null, [CallerMemberName] string callerMemberName = null)
 			where TAsyncDisposable : IAsyncDisposable
 		{
-			IAsyncDisposable ldlProxyDisposable;
 			IAsyncDisposableDispatch<TAsyncDisposable> asyncDisposableDispatch;
 
 			if ((object)slotId == null)
@@ -337,9 +335,8 @@ namespace WellEngineered.Solder.Injection
 			if ((object)callerMemberName == null)
 				throw new ArgumentNullException(nameof(callerMemberName));
 
-			ldlProxyDisposable = new AsyncUsingBlockProxy(this, slotId, asyncDisposable); // forward call to .AsyncDispose()
-
-			asyncDisposableDispatch = new AsyncDisposableDispatch<TAsyncDisposable>(ldlProxyDisposable, asyncDisposable);
+			asyncDisposableDispatch = new AsyncUsingBlockProxy<TAsyncDisposable>(this, slotId, asyncDisposable); // forward call to .AsyncDispose()
+			await asyncDisposableDispatch.SafeCreateAsync(cancellationToken);
 
 			await this.SlotAsync(FormatCallerInfo(callerFilePath, callerLineNumber, callerMemberName), slotId, asyncDisposable, FormatOperation(this.ObjectIdGenerator, "using_async", slotId, asyncDisposable), cancellationToken);
 

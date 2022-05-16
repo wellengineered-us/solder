@@ -1,5 +1,5 @@
 /*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -43,7 +43,7 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs
 
 		#region Methods/Operators
 
-		protected override IUnknownSolderConfiguration<ISolderSpecification> CoreCreateTypedUnknownConfiguration()
+		protected override IUnknownSolderConfiguration<ISolderSpecification> CoreCreateTypedUnknownConfiguration(IUnknownSolderConfiguration unknownSolderConfiguration)
 		{
 			return new UnknownEndToEndConfiguration<DogFoodSpecification>(this.Configuration);
 		}

@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright ©2020-2021 WellEngineered.us, all rights reserved.
+	Copyright ©2020-2022 WellEngineered.us, all rights reserved.
 	Distributed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 */
 
@@ -7,8 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-using NMock;
 
 using NUnit.Framework;
 
@@ -30,152 +28,6 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 
 		#region Methods/Operators
 
-		[Test]
-		public void ShouldCheckEqualByValueTest()
-		{
-			bool result;
-			object objA, objB;
-			
-			// both null
-			objA = null;
-			objB = null;
-			result = ReflectionExtensions.EqualByValue(objA, objB);
-			Assert.IsTrue(result);
-
-			// objA null, objB not null
-			objA = null;
-			objB = "not null string";
-			result = ReflectionExtensions.EqualByValue(objA, objB);
-			Assert.IsFalse(result);
-
-			// objA not null, objB null
-			objA = "not null string";
-			objB = null;
-			result = ReflectionExtensions.EqualByValue(objA, objB);
-			Assert.IsFalse(result);
-
-			// objA == objB
-			objA = 100;
-			objB = 100;
-			result = ReflectionExtensions.EqualByValue(objA, objB);
-			Assert.IsTrue(result);
-
-			// objA != objB
-			objA = 100;
-			objB = -100;
-			result = ReflectionExtensions.EqualByValue(objA, objB);
-			Assert.IsFalse(result);
-		}
-		
-		[Test]
-		public void ShouldPreventNullCoaleseTest()
-		{
-			bool result;
-			object objA, objB;
-
-			// both null
-			objA = null;
-			objB = (int)0;
-			result = ReflectionExtensions.EqualByValue(objA, objB);
-			Assert.IsFalse(result);
-		}
-		
-		[Test]
-		public void ShouldGetNonNullOnNonNullValueChangeTypeTest()
-		{
-			object value;
-
-			value = ReflectionExtensions.ChangeType((byte)1, typeof(int));
-
-			Assert.IsNotNull(value);
-			Assert.IsInstanceOf<int>(value);
-			Assert.AreEqual((int)1, value);
-		}
-
-		[Test]
-		public void ShouldGetNonNullOnNonNullValueChangeTypeTick1Test()
-		{
-			int value;
-
-			value = ReflectionExtensions.ChangeType<int>((byte)1);
-
-			Assert.IsNotNull(value);
-			Assert.IsInstanceOf<int>(value);
-			Assert.AreEqual((int)1, value);
-		}
-
-		[Test]
-		public void ShouldGetNonNullOnNonNullValueNullableChangeTypeTest()
-		{
-			object value;
-
-			value = ReflectionExtensions.ChangeType((byte)1, typeof(int?));
-
-			Assert.IsNotNull(value);
-			Assert.IsInstanceOf<int?>(value);
-			Assert.AreEqual((int?)1, value);
-		}
-
-		[Test]
-		public void ShouldGetNonNullOnNonNullValueNullableChangeTypeTick1Test()
-		{
-			int? value;
-
-			value = ReflectionExtensions.ChangeType<int?>((byte)1);
-
-			Assert.IsNotNull(value);
-			Assert.IsInstanceOf<int?>(value);
-			Assert.AreEqual((int?)1, value);
-		}
-		
-		[Test]
-		public void ShouldGetDefaultOnNullValueChangeTypeTest()
-		{
-			object value;
-
-			value = ReflectionExtensions.ChangeType(null, typeof(int));
-
-			Assert.AreEqual(default(int), value);
-		}
-
-		[Test]
-		public void ShouldGetDefaultOnNullValueChangeTypeTick1Test()
-		{
-			int value;
-
-			value = ReflectionExtensions.ChangeType<int>(null);
-
-			Assert.AreEqual(default(int), value);
-		}
-
-		[Test]
-		public void ShouldGetDefaultValueTest()
-		{
-			object defaultValue;
-
-			defaultValue = ReflectionExtensions.DefaultValue(typeof(int));
-
-			Assert.AreEqual(0, defaultValue);
-
-			defaultValue = ReflectionExtensions.DefaultValue(typeof(int?));
-
-			Assert.IsNull(defaultValue);
-		}
-		
-		[Test]
-		[ExpectedException(typeof(ArgumentNullException))]
-		public void ShouldFailOnNullTypeChangeTypeTest()
-		{
-			ReflectionExtensions.ChangeType(1, null);
-		}
-
-		[Test]
-		[ExpectedException(typeof(ArgumentNullException))]
-		public void ShouldFailOnNullTypeDefaultValueTest()
-		{
-			ReflectionExtensions.DefaultValue(null);
-		}
-		
 		[Test]
 		public void ShouldAssociativeOnlyGetLogicalPropertyTypeTest()
 		{
@@ -391,6 +243,43 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 		}
 
 		[Test]
+		public void ShouldCheckEqualByValueTest()
+		{
+			bool result;
+			object objA, objB;
+
+			// both null
+			objA = null;
+			objB = null;
+			result = ReflectionExtensions.EqualByValue(objA, objB);
+			Assert.IsTrue(result);
+
+			// objA null, objB not null
+			objA = null;
+			objB = "not null string";
+			result = ReflectionExtensions.EqualByValue(objA, objB);
+			Assert.IsFalse(result);
+
+			// objA not null, objB null
+			objA = "not null string";
+			objB = null;
+			result = ReflectionExtensions.EqualByValue(objA, objB);
+			Assert.IsFalse(result);
+
+			// objA == objB
+			objA = 100;
+			objB = 100;
+			result = ReflectionExtensions.EqualByValue(objA, objB);
+			Assert.IsTrue(result);
+
+			// objA != objB
+			objA = 100;
+			objB = -100;
+			result = ReflectionExtensions.EqualByValue(objA, objB);
+			Assert.IsFalse(result);
+		}
+
+		[Test]
 		[ExpectedException(typeof(InvalidOperationException))]
 		public void ShouldFailOnDefinedGetNoAttributesTest()
 		{
@@ -437,6 +326,20 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 		public void ShouldFailOnNullTargetGetZeroAttributesTest()
 		{
 			ReflectionExtensions.GetZeroAttributes<MockMultipleTestAttibute>(null);
+		}
+
+		[Test]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void ShouldFailOnNullTypeChangeTypeTest()
+		{
+			ReflectionExtensions.ChangeType(1, null);
+		}
+
+		[Test]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void ShouldFailOnNullTypeDefaultValueTest()
+		{
+			ReflectionExtensions.DefaultValue(null);
 		}
 
 		[Test]
@@ -502,6 +405,40 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 		}
 
 		[Test]
+		public void ShouldGetDefaultOnNullValueChangeTypeTest()
+		{
+			object value;
+
+			value = ReflectionExtensions.ChangeType(null, typeof(int));
+
+			Assert.AreEqual(default(int), value);
+		}
+
+		[Test]
+		public void ShouldGetDefaultOnNullValueChangeTypeTick1Test()
+		{
+			int value;
+
+			value = ReflectionExtensions.ChangeType<int>(null);
+
+			Assert.AreEqual(default(int), value);
+		}
+
+		[Test]
+		public void ShouldGetDefaultValueTest()
+		{
+			object defaultValue;
+
+			defaultValue = ReflectionExtensions.DefaultValue(typeof(int));
+
+			Assert.AreEqual(0, defaultValue);
+
+			defaultValue = ReflectionExtensions.DefaultValue(typeof(int?));
+
+			Assert.IsNull(defaultValue);
+		}
+
+		[Test]
 		public void ShouldGetEmptyAttributesTest()
 		{
 			MockMultipleTestAttibute[] tas;
@@ -544,6 +481,54 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 		public void ShouldGetNoAttributesTest()
 		{
 			ReflectionExtensions.GetZeroAttributes<AssemblyDescriptionAttribute>(typeof(MockTestAttributedClass));
+		}
+
+		[Test]
+		public void ShouldGetNonNullOnNonNullValueChangeTypeTest()
+		{
+			object value;
+
+			value = ReflectionExtensions.ChangeType((byte)1, typeof(int));
+
+			Assert.IsNotNull(value);
+			Assert.IsInstanceOf<int>(value);
+			Assert.AreEqual((int)1, value);
+		}
+
+		[Test]
+		public void ShouldGetNonNullOnNonNullValueChangeTypeTick1Test()
+		{
+			int value;
+
+			value = ReflectionExtensions.ChangeType<int>((byte)1);
+
+			Assert.IsNotNull(value);
+			Assert.IsInstanceOf<int>(value);
+			Assert.AreEqual((int)1, value);
+		}
+
+		[Test]
+		public void ShouldGetNonNullOnNonNullValueNullableChangeTypeTest()
+		{
+			object value;
+
+			value = ReflectionExtensions.ChangeType((byte)1, typeof(int?));
+
+			Assert.IsNotNull(value);
+			Assert.IsInstanceOf<int?>(value);
+			Assert.AreEqual((int?)1, value);
+		}
+
+		[Test]
+		public void ShouldGetNonNullOnNonNullValueNullableChangeTypeTick1Test()
+		{
+			int? value;
+
+			value = ReflectionExtensions.ChangeType<int?>((byte)1);
+
+			Assert.IsNotNull(value);
+			Assert.IsInstanceOf<int?>(value);
+			Assert.AreEqual((int?)1, value);
 		}
 
 		[Test]
@@ -592,6 +577,19 @@ namespace WellEngineered.Solder.UnitTests.Cli.Primitives._
 			conversionType = typeof(IDisposable);
 			nullableType = ReflectionExtensions.MakeNullableType(conversionType);
 			Assert.AreEqual(typeof(IDisposable), nullableType);
+		}
+
+		[Test]
+		public void ShouldPreventNullCoaleseTest()
+		{
+			bool result;
+			object objA, objB;
+
+			// both null
+			objA = null;
+			objB = (int)0;
+			result = ReflectionExtensions.EqualByValue(objA, objB);
+			Assert.IsFalse(result);
 		}
 
 		[Test]
