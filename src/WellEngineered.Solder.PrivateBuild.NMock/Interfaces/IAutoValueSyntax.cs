@@ -1,4 +1,4 @@
-﻿namespace NMock.Syntax
+namespace NMock.Syntax
 {
 	/// <summary>
 	/// Extends <see cref="IValueSyntax"/> by adding other syntax methods.

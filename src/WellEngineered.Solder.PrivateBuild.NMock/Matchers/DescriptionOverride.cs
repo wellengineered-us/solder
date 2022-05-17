@@ -1,4 +1,4 @@
-﻿namespace NMock.Matchers
+namespace NMock.Matchers
 {
 	/// <summary>
 	/// Matcher that is used to change the description the wrapped matcher.

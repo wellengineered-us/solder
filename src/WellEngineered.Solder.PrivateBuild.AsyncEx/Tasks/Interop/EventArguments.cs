@@ -1,4 +1,4 @@
-﻿namespace Nito.AsyncEx.Interop
+namespace Nito.AsyncEx.Interop
 {
     /// <summary>
     /// Arguments passed to a .NET event that follows the standard <c>sender, arguments</c> event pattern.

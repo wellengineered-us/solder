@@ -1,4 +1,4 @@
-﻿namespace NMock.Syntax
+namespace NMock.Syntax
 {
 	/// <summary>
 	/// Extends the <see cref="IArgumentSyntax"/> interface to include the <see cref="WillReturn"/> method.

@@ -1,4 +1,4 @@
-﻿namespace NMock.Syntax
+namespace NMock.Syntax
 {
 	internal interface IValueSyntaxBuilder : IValueSyntax
 	{

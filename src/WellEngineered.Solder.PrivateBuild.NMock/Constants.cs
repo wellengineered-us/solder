@@ -1,4 +1,4 @@
-﻿namespace NMock
+namespace NMock
 {
 	/// <summary>
 	/// Defines public constants

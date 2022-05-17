@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Nito.Disposables.Internals;
 
 namespace Nito.Disposables

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NMock.Actions;
 using NMock.Matchers;
 using NMock.Syntax;

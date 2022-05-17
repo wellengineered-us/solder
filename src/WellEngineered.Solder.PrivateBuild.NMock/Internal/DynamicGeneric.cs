@@ -1,4 +1,4 @@
-﻿#if NETFX40
+#if NETFX40
 // Copyright:     (C) 2011 by Zachary Gramana
 // Author:        Zachary Gramana
 // Version:       0.1

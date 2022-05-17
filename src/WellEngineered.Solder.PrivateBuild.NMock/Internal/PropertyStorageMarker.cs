@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NMock.Monitoring;
 
 namespace NMock.Internal

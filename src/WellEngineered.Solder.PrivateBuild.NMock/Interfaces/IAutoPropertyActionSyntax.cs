@@ -1,4 +1,4 @@
-﻿using NMock.Matchers;
+using NMock.Matchers;
 
 namespace NMock.Syntax
 {

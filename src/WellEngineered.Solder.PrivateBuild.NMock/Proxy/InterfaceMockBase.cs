@@ -1,4 +1,4 @@
-﻿namespace NMock.Proxy
+namespace NMock.Proxy
 {
 	/// <summary>
 	/// Used as a base for interface mocks in order to provide a holder
