@@ -14,7 +14,7 @@ namespace WellEngineered.Solder.Injection
 	{
 		#region Methods/Operators
 
-		public static TTarget GetObjectAssignableToTargetType<TTarget>(this Type instantiateType, IDependencyManager dependencyManager, bool autoWire)
+		public static TTarget GetObjectAssignableToTargetType<TTarget>(this Type instantiateType, IDependencyManager dependencyManager, bool autoWire, string selectorKey = null, bool throwOnError = true)
 		{
 			TTarget obj;
 
@@ -25,9 +25,9 @@ namespace WellEngineered.Solder.Injection
 				throw new ArgumentNullException(nameof(dependencyManager));
 
 			if (autoWire)
-				obj = instantiateType.ResolveAutoWireAssignableToTargetType<TTarget>(dependencyManager);
+				obj = instantiateType.ResolveAutoWireAssignableToTargetType<TTarget>(dependencyManager, selectorKey, throwOnError);
 			else
-				obj = instantiateType.CreateInstanceAssignableToTargetType<TTarget>();
+				obj = instantiateType.CreateInstanceAssignableToTargetType<TTarget>(throwOnError);
 
 			if ((object)obj == null)
 				throw new SolderException(string.Format("Failed to create object of type: '{0}', auto-wire: {1}.", instantiateType.FullName, autoWire));
@@ -52,7 +52,7 @@ namespace WellEngineered.Solder.Injection
 			if (!targetType.IsAssignableFrom(instantiateType))
 			{
 				if (throwOnError)
-					throw new InvalidOperationException(string.Format("Target type '{0} is not assignable from instantiate type '{1}.", targetType, instantiateType));
+					throw new InvalidOperationException(string.Format("Target type '{0}' is not assignable from instantiate type '{1}.", targetType, instantiateType));
 				else
 					return default;
 			}
