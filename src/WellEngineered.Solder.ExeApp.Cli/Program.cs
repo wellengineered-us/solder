@@ -5,6 +5,7 @@
 
 using System;
 
+using WellEngineered.Solder.Executive;
 using WellEngineered.Solder.Injection;
 using WellEngineered.Solder.Injection.Resolutions;
 

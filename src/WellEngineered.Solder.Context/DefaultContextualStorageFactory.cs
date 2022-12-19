@@ -49,8 +49,10 @@ namespace WellEngineered.Solder.Context
 					return new GlobalStaticContextualStorageStrategy();
 				case ContextScope.LocalThreadSafe:
 					return new ThreadLocalContextualStorageStrategy();
+#if ASYNC_ALL_THE_WAY_DOWN
 				case ContextScope.LocalAsyncSafe:
 					return new AsyncLocalContextualStorageStrategy();
+#endif
 				default:
 					throw new ArgumentOutOfRangeException(nameof(this.ContextScope));
 			}
