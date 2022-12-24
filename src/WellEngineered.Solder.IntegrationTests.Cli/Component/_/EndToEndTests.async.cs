@@ -5,6 +5,7 @@
 
 #if ASYNC_ALL_THE_WAY_DOWN
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using NUnit.Framework;
@@ -19,6 +20,43 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 	public partial class EndToEndTests
 	{
 		#region Methods/Operators
+		
+		[Test]
+		public async ValueTask ShouldCreateIndirectTestAsync()
+		{
+			await using (ISolderComponent<UnknownEndToEndConfiguration<DogFoodSpecification>, DogFoodSpecification> solderComponent = new DogFoodComponentTick2())
+			{
+				var that = Activator.CreateInstance<UnknownEndToEndConfiguration>();
+
+				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
+				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
+				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
+				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
+				
+				Assert.IsNull(that.UntypedSolderComponentSpecification);
+
+				//var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
+				//solderComponent.Configuration = configuration;
+
+				ISolderComponent2 solderComponent2 = solderComponent;
+				solderComponent2.Configuration = that;
+				await solderComponent.CreateAsync();
+
+				//configuration = solderComponent.Configuration as UnknownEndToEndConfiguration<DogFoodSpecification>;
+
+				//Assert.IsNotNull(configuration);
+
+				Assert.IsNotNull(solderComponent.Configuration);
+				var specification = solderComponent.Specification as DogFoodSpecification;
+
+				Assert.IsNotNull(specification);
+
+				Assert.AreEqual("test", specification.PropA);
+				Assert.AreEqual(100, specification.PropB);
+				Assert.AreEqual(true, specification.PropC);
+				Assert.AreEqual(10.50, specification.PropD);
+			}
+		}
 
 		[Test]
 		public async ValueTask ShouldCreateTestAsync()
@@ -42,12 +80,15 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 
 			await using (ISolderComponent2 solderComponent = new DogFoodComponent2())
 			{
-				var that = new UnknownEndToEndConfiguration();
+				var that = new UnknownEndToEndConfiguration(new Dictionary<string, object>(), typeof(DogFoodSpecification));
 
 				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
 				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
 				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
 				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
+				
+				Assert.IsNotNull(that.AsyncUntypedSolderComponentSpecification);
+				Assert.IsInstanceOf<DogFoodSpecification>(that.AsyncUntypedSolderComponentSpecification);
 
 				var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
 				solderComponent.Configuration = configuration;
@@ -74,13 +115,16 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 
 			await using (ISolderComponent2 solderComponent = new DogFoodComponent2())
 			{
-				var that = new UnknownEndToEndConfiguration();
+				var that = new UnknownEndToEndConfiguration(new Dictionary<string, object>(), typeof(DogFoodSpecification));
 
 				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
 				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
 				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
 				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
 
+				Assert.IsNotNull(that.AsyncUntypedSolderComponentSpecification);
+				Assert.IsInstanceOf<DogFoodSpecification>(that.AsyncUntypedSolderComponentSpecification);
+				
 				var configuration = that;
 				solderComponent.Configuration = configuration;
 				await solderComponent.CreateAsync();
@@ -128,12 +172,15 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._
 
 			await using (ISolderComponent<UnknownEndToEndConfiguration<DogFoodSpecification>, DogFoodSpecification> solderComponent = new DogFoodComponentTick2())
 			{
-				var that = new UnknownEndToEndConfiguration();
+				var that = new UnknownEndToEndConfiguration(new Dictionary<string, object>(), typeof(DogFoodSpecification));
 
 				that.Specification.Add(nameof(DogFoodSpecification.PropA), "test");
 				that.Specification.Add(nameof(DogFoodSpecification.PropB), 100);
 				that.Specification.Add(nameof(DogFoodSpecification.PropC), true);
 				that.Specification.Add(nameof(DogFoodSpecification.PropD), 10.50);
+				
+				Assert.IsNotNull(that.AsyncUntypedSolderComponentSpecification);
+				Assert.IsInstanceOf<DogFoodSpecification>(that.AsyncUntypedSolderComponentSpecification);
 
 				var configuration = new UnknownEndToEndConfiguration<DogFoodSpecification>(that);
 				solderComponent.Configuration = configuration;

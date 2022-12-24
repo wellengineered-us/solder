@@ -17,6 +17,7 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs.Configura
 		#region Constructors/Destructors
 
 		public UnknownEndToEndConfiguration()
+			: this(new Dictionary<string, object>(), null)
 		{
 		}
 

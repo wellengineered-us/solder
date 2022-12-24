@@ -20,7 +20,7 @@ namespace WellEngineered.Solder.Component
 	{
 		#region Properties/Indexers/Events
 
-		protected new TSolderConfiguration AsyncSpecification
+		protected TSolderConfiguration AsyncSpecification
 		{
 			get
 			{
@@ -42,7 +42,7 @@ namespace WellEngineered.Solder.Component
 		{
 			if ((object)base.Specification != null) // MUST BE base.Prop here or SOE throws
 			{
-				this.UntypedSolderComponentSpecification =
+				this.AsyncUntypedSolderComponentSpecification =
 					this.Specification =
 						JObject.FromObject(base.Specification).ToObject<TSolderConfiguration>();
 

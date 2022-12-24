@@ -82,6 +82,8 @@ namespace WellEngineered.Solder.Component
 
 				typedUnknownSolderConfiguration = this.CoreCreateTypedUnknownConfiguration(untypedUnknownSolderConfiguration);
 
+				// need to swap out untyped for typed (this was a bug)
+				this.Configuration = typedUnknownSolderConfiguration;
 				this.Specification = typedUnknownSolderConfiguration.Specification;
 
 				this.AssertValidSpecification();

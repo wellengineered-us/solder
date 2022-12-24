@@ -26,7 +26,7 @@ namespace WellEngineered.Solder.IntegrationTests.Cli.Component._.Stubs
 
 		protected override IUnknownSolderConfiguration<DogFoodSpecification> CoreCreateGenericTypedUnknownConfiguration(IUnknownSolderConfiguration unknownSolderConfiguration)
 		{
-			return new UnknownEndToEndConfiguration<DogFoodSpecification>(this.Configuration);
+			return new UnknownEndToEndConfiguration<DogFoodSpecification>(unknownSolderConfiguration);
 		}
 
 		#endregion

@@ -19,18 +19,18 @@ namespace WellEngineered.Solder.Component
 	{
 		#region Constructors/Destructors
 
-		protected UnknownSolderConfiguration()
+		/*protected UnknownSolderConfiguration()
 			: this(new Dictionary<string, object>(), typeof(ISolderConfiguration))
 		{
-		}
+		}*/
 
 		protected UnknownSolderConfiguration(IDictionary<string, object> specification, Type specificationType)
 		{
 			if ((object)specification == null)
 				throw new ArgumentNullException(nameof(specification));
 
-			if ((object)specificationType == null)
-				throw new ArgumentNullException(nameof(specificationType));
+			//if ((object)specificationType == null)
+				//throw new ArgumentNullException(nameof(specificationType));
 
 			this.specification = specification;
 			this.specificationType = specificationType;
@@ -97,7 +97,8 @@ namespace WellEngineered.Solder.Component
 
 		protected virtual void CoreApplyUntypedSpecification()
 		{
-			this.CoreApplyUntypedSpecification(this.SpecificationType);
+			if ((object)this.SpecificationType != null)
+				this.CoreApplyUntypedSpecification(this.SpecificationType);
 		}
 
 		protected virtual void CoreApplyUntypedSpecification(Type specificationType)

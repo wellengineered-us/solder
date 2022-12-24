@@ -41,9 +41,10 @@ namespace WellEngineered.Solder.Component
 
 		#region Methods/Operators
 
-		protected virtual ValueTask CoreApplyUntypedSpecificationAsync()
+		protected async virtual ValueTask CoreApplyUntypedSpecificationAsync()
 		{
-			return this.CoreApplyUntypedSpecificationAsync(this.SpecificationType);
+			if ((object)this.SpecificationType != null)
+				await this.CoreApplyUntypedSpecificationAsync(this.SpecificationType);
 		}
 
 		protected virtual async ValueTask CoreApplyUntypedSpecificationAsync(Type specificationType)
@@ -53,7 +54,7 @@ namespace WellEngineered.Solder.Component
 
 			if ((object)this.Specification != null)
 			{
-				this.UntypedSolderComponentSpecification = (ISolderSpecification)
+				this.AsyncUntypedSolderComponentSpecification = (ISolderSpecification)
 					JObject.FromObject(this.Specification).ToObject(specificationType);
 
 				await Task.CompletedTask;
